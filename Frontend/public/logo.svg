@@ -1,0 +1,11 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- House outline -->
+  <path d="M30 110 L30 170 L90 170 L90 130 L110 130 L110 170 L170 170 L170 110" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Roof -->
+  <path d="M20 115 L100 55 L180 115" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Leaf/flame shape inside house -->
+  <path d="M100 75 C80 90 72 108 80 125 C85 137 95 143 100 143 C105 143 115 137 120 125 C128 108 120 90 100 75Z" fill="#059669" opacity="0.15"/>
+  <path d="M100 75 C80 90 72 108 80 125 C85 137 95 143 100 143 C105 143 115 137 120 125 C128 108 120 90 100 75Z" stroke="#059669" stroke-width="3" fill="none"/>
+  <!-- Gold accent curve -->
+  <path d="M100 80 C88 95 84 112 90 128 C93 136 97 141 100 143" stroke="#B8962E" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>
