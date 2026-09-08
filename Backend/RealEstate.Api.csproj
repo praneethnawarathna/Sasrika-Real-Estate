@@ -1,9 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Explicitly set to prevent namespace drift when the folder is renamed/moved -->
+    <RootNamespace>RealEstate.Api</RootNamespace>
+    <AssemblyName>RealEstate.Api</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
