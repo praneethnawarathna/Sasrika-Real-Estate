@@ -24,8 +24,10 @@ export default function PropertyCard({ property: p, onEdit, onDelete }) {
   const imgUrl =
     p.imageUrls?.[0] ||
     'https://placehold.co/800x500/e2e8f0/94a3b8?text=No+Image';
-  const isForSale = p.listingType === 0;
-  const propType = PROPERTY_TYPES[p.propertyType] || PROPERTY_TYPES[0];
+  const isForSale = p.listingType === 0 || p.listingType === 'ForSale';
+  const isLand = p.propertyType === 0 || p.propertyType === 'Land';
+  const landSize = p.landSizePerches ?? p.landSize ?? 0;
+  const propType = PROPERTY_TYPES[typeof p.propertyType === 'number' ? p.propertyType : (p.propertyType === 'Land' ? 0 : p.propertyType === 'House' ? 1 : 2)] || PROPERTY_TYPES[0];
 
   const whatsAppUrl = getWhatsAppUrl(p.sellerPhone, p.title, p.price, p.isNegotiable);
 
@@ -197,9 +199,10 @@ export default function PropertyCard({ property: p, onEdit, onDelete }) {
             </span>
 
             <div className="flex items-center gap-2">
-              {p.pricePerPerch && (p.propertyType === 0 || p.propertyType === 1) && (
-                <span className="text-[11px] text-emerald-600 font-bold mr-1">
-                  Rs. {Math.round(p.pricePerPerch).toLocaleString()}/p
+              {/* ONLY show per-perch price for Land For Sale */}
+              {isForSale && isLand && landSize > 0 && (
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                  Rs. {Math.round(p.pricePerPerch || (p.price / landSize)).toLocaleString()}/p
                 </span>
               )}
 
