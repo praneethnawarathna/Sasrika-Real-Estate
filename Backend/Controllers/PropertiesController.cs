@@ -22,7 +22,7 @@ public class PropertiesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Property>>> GetAll([FromQuery] PropertyQueryParameters? query)
     {
-        var items = _context.Properties.AsNoTracking().AsQueryable();
+        var items = _context.Properties.AsNoTracking().Where(p => p.Status == ModerationStatus.Approved).AsQueryable();
 
         if (query != null)
         {
@@ -121,7 +121,7 @@ public class PropertiesController : ControllerBase
     public async Task<ActionResult<Property>> GetById(Guid id)
     {
         var property = await _context.Properties.FindAsync(id);
-        if (property == null) return NotFound();
+        if (property == null || property.Status != ModerationStatus.Approved) return NotFound();
 
         property.ViewCount += 1;
         await _context.SaveChangesAsync();
@@ -163,6 +163,7 @@ public class PropertiesController : ControllerBase
             SellerName = dto.SellerName,
             SellerPhone = dto.SellerPhone,
             EditPin = dto.EditPin,
+            Status = ModerationStatus.Pending,
             ViewCount = 0,
             CreatedAt = DateTime.UtcNow
         };

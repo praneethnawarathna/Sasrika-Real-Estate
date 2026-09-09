@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Upload, User, Phone, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { X, Upload, User, Phone, KeyRound, Eye, EyeOff, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import ImageUploadField from './ImageUploadField';
 
 const API_BASE = 'http://localhost:5143/api/properties';
@@ -27,6 +27,7 @@ export default function AddPropertyModal({ onClose, onCreated }) {
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [submittedProperty, setSubmittedProperty] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -82,8 +83,8 @@ export default function AddPropertyModal({ onClose, onCreated }) {
         throw new Error(errData?.message || 'Failed to create property.');
       }
       const created = await res.json();
-      onCreated(created);
-      onClose();
+      setSubmittedProperty(created);
+      onCreated?.(created);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,6 +99,58 @@ export default function AddPropertyModal({ onClose, onCreated }) {
   const isLand = selectedType === 0;
   const isHouse = selectedType === 1;
   const isCommercial = selectedType === 2;
+
+  if (submittedProperty) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center animate-in fade-in zoom-in duration-200 border border-gray-100">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={36} />
+          </div>
+          <h2 className="text-xl font-black text-gray-900">Listing Submitted!</h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Your property has been received and is currently in pre-moderation.
+          </p>
+
+          <div className="my-5 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Reference Code:</span>
+              <span className="font-mono text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                {submittedProperty.referenceCode}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Status:</span>
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                <Clock size={12} /> Pending Review
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Your Secret PIN:</span>
+              <span className="font-mono text-xs font-bold text-gray-800 bg-white px-2 py-0.5 rounded border">
+                {form.editPin}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50/60 border border-emerald-100 p-3 rounded-xl text-left flex items-start gap-2.5 mb-5">
+            <ShieldCheck size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-emerald-800 leading-relaxed">
+              Our moderation team reviews listings for accuracy and deed authenticity. Once verified (usually within 2-4 hours), your listing will go live across Sri Lanka.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm transition-colors"
+          >
+            Done &amp; Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
