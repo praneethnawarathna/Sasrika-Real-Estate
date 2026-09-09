@@ -1,4 +1,4 @@
-﻿namespace RealEstate.Api.Models;
+namespace RealEstate.Api.Models;
 
 public enum PropertyType
 {
@@ -11,4 +11,11 @@ public enum ListingType
 {
     ForSale = 0,
     ForRent = 1
+}
+
+public enum ModerationStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2
 }

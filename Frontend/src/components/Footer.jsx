@@ -11,21 +11,19 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-3">
             <Link to="/" className="flex items-center gap-2.5">
               <img
-                src="/logo.svg"
+                src="/logo.png"
                 alt="Sasrika Real Estate"
-                className="h-8 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
               <span className="font-extrabold text-xl text-gray-900 tracking-tight leading-none">
-                Sasrika<span className="text-emerald-600">.</span>
+                Sasrika<span className="text-emerald-600"></span>
               </span>
             </Link>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
               Sri Lanka's trusted direct property marketplace. We connect genuine buyers with verified land, residential houses, and commercial listings with transparent pricing and direct WhatsApp/call inquiries.
             </p>
             <div className="flex items-center gap-1 text-[11px] text-gray-400">
-              <span>Made with</span>
-              <Heart size={12} className="text-rose-500 fill-rose-500" />
-              <span>for Sri Lanka Real Estate</span>
+              <span>All in One from Maalz</span>
             </div>
           </div>
 
@@ -91,7 +89,6 @@ export default function Footer() {
             <span className="text-gray-300">•</span>
             <span>Direct Seller Platform</span>
             <span className="text-gray-300">•</span>
-            <span>Sri Lanka</span>
           </div>
         </div>
       </div>

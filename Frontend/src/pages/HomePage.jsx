@@ -169,8 +169,8 @@ export default function HomePage() {
     filters.sortBy === 'price_asc'
       ? 'Price: Low to High'
       : filters.sortBy === 'price_desc'
-      ? 'Price: High to Low'
-      : 'Newest First';
+        ? 'Price: High to Low'
+        : 'Newest First';
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
@@ -186,10 +186,10 @@ export default function HomePage() {
           {/* Hero Section */}
           <div className="pt-6 pb-6 text-center max-w-3xl mx-auto">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 mb-3">
-              🇱🇰 Sri Lanka's Premier Real Estate Network
+              Sri Lanka's Premier Real Estate Marketplace
             </span>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              Find Your Ideal Property in <span className="text-emerald-600">Sri Lanka</span>
+              Find Your Ideal Property in <span className="text-emerald-600"><br />Sri Lanka</span>
             </h1>
             <p className="mt-2.5 text-sm sm:text-base text-gray-500 max-w-xl mx-auto leading-relaxed">
               Explore verified lands, modern houses, and commercial spaces with transparent pricing and direct seller contact.
@@ -307,27 +307,24 @@ export default function HomePage() {
         <div className="grid grid-cols-4 py-1">
           <button
             onClick={() => handleNavFilterChange('all')}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
-              activeFilter === 'all' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${activeFilter === 'all' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <span className="text-lg leading-none">🏠</span>
             Explore
           </button>
           <button
             onClick={() => handleNavFilterChange('sale')}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
-              activeFilter === 'sale' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${activeFilter === 'sale' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <span className="text-lg leading-none">🏷️</span>
             For Sale
           </button>
           <button
             onClick={() => handleNavFilterChange('rent')}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
-              activeFilter === 'rent' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${activeFilter === 'rent' ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
           >
             <span className="text-lg leading-none">🔑</span>
             For Rent

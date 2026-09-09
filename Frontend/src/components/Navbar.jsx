@@ -30,13 +30,13 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
           {/* ── Left: Logo + Brand ── */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
             <img
-              src="/logo.svg"
+              src="/logo.png"
               alt="Sasrika Real Estate"
-              className="h-10 w-auto object-contain"
+              className="h-11 w-auto object-contain"
             />
             <div className="hidden sm:block">
               <span className="font-extrabold text-xl text-gray-900 tracking-tight leading-none">
-                Sasrika<span className="text-emerald-600">.</span>
+                Sasrika<span className="text-emerald-600"></span>
               </span>
               <p className="text-[10px] text-emerald-600 font-semibold tracking-widest uppercase leading-none mt-0.5">
                 Real Estate
@@ -49,11 +49,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             {/* 1. Explore */}
             <button
               onClick={() => handleTabClick('all')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                isHome && activeFilter === 'all'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${isHome && activeFilter === 'all'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+                }`}
             >
               Explore
             </button>
@@ -61,11 +60,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             {/* 2. For Sale */}
             <button
               onClick={() => handleTabClick('sale')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                isHome && activeFilter === 'sale'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${isHome && activeFilter === 'sale'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+                }`}
             >
               For Sale
             </button>
@@ -73,11 +71,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             {/* 3. For Rent */}
             <button
               onClick={() => handleTabClick('rent')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                isHome && activeFilter === 'rent'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${isHome && activeFilter === 'rent'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+                }`}
             >
               For Rent
             </button>
@@ -85,11 +82,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             {/* 4. About Us (Dedicated /about route) */}
             <Link
               to="/about"
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                isAbout
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${isAbout
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+                }`}
             >
               About Us
             </Link>
@@ -143,11 +139,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
                   handleTabClick('all');
                   setMobileOpen(false);
                 }}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-                  isHome && activeFilter === 'all'
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
-                }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${isHome && activeFilter === 'all'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                  }`}
               >
                 Explore
               </button>
@@ -156,11 +151,10 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
                   handleTabClick('sale');
                   setMobileOpen(false);
                 }}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-                  isHome && activeFilter === 'sale'
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
-                }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${isHome && activeFilter === 'sale'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                  }`}
               >
                 For Sale
               </button>
@@ -169,22 +163,20 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
                   handleTabClick('rent');
                   setMobileOpen(false);
                 }}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-                  isHome && activeFilter === 'rent'
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
-                }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${isHome && activeFilter === 'rent'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                  }`}
               >
                 For Rent
               </button>
               <Link
                 to="/about"
                 onClick={() => setMobileOpen(false)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-                  isAbout
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
-                }`}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${isAbout
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                  }`}
               >
                 About Us
               </Link>
