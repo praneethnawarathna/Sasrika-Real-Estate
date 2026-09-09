@@ -1,8 +1,10 @@
-﻿import { useEffect, useState } from 'react';
-import { Search, SlidersHorizontal, Clock, LayoutGrid } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, SlidersHorizontal, Clock, LayoutGrid, AlertTriangle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PropertyCard from '../components/PropertyCard';
 import AddPropertyModal from '../components/AddPropertyModal';
+import PinPromptModal from '../components/PinPromptModal';
+import EditPropertyModal from '../components/EditPropertyModal';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
@@ -21,6 +23,68 @@ export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 4-digit PIN management state
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinAction, setPinAction] = useState(null); // 'edit' | 'delete'
+  const [verifiedPin, setVerifiedPin] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleCardEdit = (p) => {
+    setSelectedProperty(p);
+    setPinAction('edit');
+    setPinModalOpen(true);
+  };
+
+  const handleCardDelete = (p) => {
+    setSelectedProperty(p);
+    setPinAction('delete');
+    setPinModalOpen(true);
+  };
+
+  const handlePinVerified = (pin) => {
+    setVerifiedPin(pin);
+    setPinModalOpen(false);
+    if (pinAction === 'edit') {
+      setEditModalOpen(true);
+    } else if (pinAction === 'delete') {
+      setDeleteConfirmOpen(true);
+    }
+  };
+
+  const handlePropertyUpdated = (updated) => {
+    setProperties((prev) =>
+      prev.map((item) => (item.id === updated.id ? updated : item))
+    );
+    alert('Listing updated successfully!');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedProperty) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`${API_BASE}/${selectedProperty.id}?pin=${encodeURIComponent(verifiedPin)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.message || 'Failed to delete listing.');
+      }
+      setProperties((prev) => prev.filter((item) => item.id !== selectedProperty.id));
+      setDeleteConfirmOpen(false);
+      setSelectedProperty(null);
+      alert('Listing has been successfully deleted.');
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete listing.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchProperties = async () => {
     try {
@@ -186,7 +250,12 @@ export default function HomePage() {
         {!loading && !error && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {filtered.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+              <PropertyCard
+                key={p.id}
+                property={p}
+                onEdit={handleCardEdit}
+                onDelete={handleCardDelete}
+              />
             ))}
           </div>
         )}
@@ -221,6 +290,92 @@ export default function HomePage() {
           onClose={() => setIsModalOpen(false)}
           onCreated={handleCreated}
         />
+      )}
+
+      {/* PIN Verification Modal */}
+      {pinModalOpen && selectedProperty && (
+        <PinPromptModal
+          propertyId={selectedProperty.id}
+          title={pinAction === 'edit' ? 'Enter PIN to Edit' : 'Enter PIN to Delete'}
+          actionDescription={
+            pinAction === 'edit'
+              ? `Enter the 4-digit secret PIN for "${selectedProperty.title}".`
+              : `Enter the 4-digit secret PIN to authorize deleting "${selectedProperty.title}".`
+          }
+          onClose={() => {
+            setPinModalOpen(false);
+            setSelectedProperty(null);
+          }}
+          onSuccess={handlePinVerified}
+        />
+      )}
+
+      {/* Edit Property Modal */}
+      {editModalOpen && selectedProperty && (
+        <EditPropertyModal
+          property={selectedProperty}
+          verifiedPin={verifiedPin}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedProperty(null);
+          }}
+          onUpdated={handlePropertyUpdated}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmOpen && selectedProperty && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-gray-100 p-5 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Delete Listing</h3>
+                <p className="text-xs text-gray-400">Permanently remove listing</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Are you sure you want to permanently delete{' '}
+              <strong className="text-gray-900">"{selectedProperty.title}"</strong>?
+              This action cannot be undone.
+            </p>
+
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setSelectedProperty(null);
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-xs font-bold text-white shadow-sm transition-colors flex items-center justify-center gap-1.5"
+              >
+                {deleting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Confirm Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

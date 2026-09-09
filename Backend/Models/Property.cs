@@ -1,4 +1,6 @@
-﻿namespace RealEstate.Api.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace RealEstate.Api.Models;
 
 public class Property
 {
@@ -27,4 +29,8 @@ public class Property
 
     public int ViewCount { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // 4-digit secret PIN for edit/delete ownership — never exposed in API responses
+    [JsonIgnore]
+    public string EditPin { get; set; } = string.Empty;
 }

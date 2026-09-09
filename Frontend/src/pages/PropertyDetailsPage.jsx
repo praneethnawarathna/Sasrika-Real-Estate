@@ -1,12 +1,14 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Heart, Share2, MapPin, Eye, Phone, MessageSquare,
   Ruler, CheckCircle2, Sparkles, ChevronLeft, ChevronRight,
-  Home, BedDouble, Bath, Tag
+  Home, BedDouble, Bath, Tag, Edit3, Trash2, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import AddPropertyModal from '../components/AddPropertyModal';
+import PinPromptModal from '../components/PinPromptModal';
+import EditPropertyModal from '../components/EditPropertyModal';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
@@ -34,6 +36,15 @@ export default function PropertyDetailsPage() {
   const [error, setError] = useState(null);
   const [activeImg, setActiveImg] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 4-digit PIN ownership states
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinAction, setPinAction] = useState(null); // 'edit' | 'delete'
+  const [verifiedPin, setVerifiedPin] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -88,19 +99,77 @@ export default function PropertyDetailsPage() {
     setActiveImg((i) => (i - 1 + images.length) % images.length);
   const nextImg = () => setActiveImg((i) => (i + 1) % images.length);
 
+  const handleOpenPinModal = (action) => {
+    setPinAction(action);
+    setPinModalOpen(true);
+  };
+
+  const handlePinVerified = (pin) => {
+    setVerifiedPin(pin);
+    setPinModalOpen(false);
+    if (pinAction === 'edit') {
+      setEditModalOpen(true);
+    } else if (pinAction === 'delete') {
+      setDeleteConfirmOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`${API_BASE}/${p.id}?pin=${encodeURIComponent(verifiedPin)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.message || 'Failed to delete listing.');
+      }
+      alert('Listing has been successfully deleted.');
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete listing.');
+      setDeleting(false);
+    }
+  };
+
+  const handlePropertyUpdated = (updated) => {
+    setProperty(updated);
+    alert('Listing updated successfully!');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onAddClick={() => setIsModalOpen(true)} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* Back breadcrumb */}
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 font-semibold mb-6 transition-colors"
-        >
-          <ArrowLeft size={16} /> Back to Listings
-        </button>
+        {/* Back breadcrumb + Action Bar */}
+        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 font-semibold transition-colors"
+          >
+            <ArrowLeft size={16} /> Back to Listings
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenPinModal('edit')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-emerald-500 bg-white text-gray-700 hover:text-emerald-700 text-xs font-semibold shadow-sm transition-all"
+            >
+              <Edit3 size={14} className="text-emerald-600" />
+              Edit Listing
+            </button>
+            <button
+              onClick={() => handleOpenPinModal('delete')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-rose-400 bg-white text-gray-700 hover:text-rose-600 text-xs font-semibold shadow-sm transition-all"
+            >
+              <Trash2 size={14} className="text-rose-500" />
+              Delete Listing
+            </button>
+          </div>
+        </div>
 
         {/* ── Two-Column Desktop Layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -418,6 +487,33 @@ export default function PropertyDetailsPage() {
                 </div>
               </div>
 
+              {/* Owner Listing Management Card */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-emerald-600" />
+                  Owner Actions
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Manage your listing using your secret 4-digit PIN.
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => handleOpenPinModal('edit')}
+                    className="flex items-center justify-center gap-1.5 border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl py-2.5 text-xs transition-colors"
+                  >
+                    <Edit3 size={14} className="text-emerald-600" />
+                    Edit Listing
+                  </button>
+                  <button
+                    onClick={() => handleOpenPinModal('delete')}
+                    className="flex items-center justify-center gap-1.5 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold rounded-xl py-2.5 text-xs transition-colors"
+                  >
+                    <Trash2 size={14} className="text-rose-500" />
+                    Delete Listing
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -428,6 +524,81 @@ export default function PropertyDetailsPage() {
           onClose={() => setIsModalOpen(false)}
           onCreated={() => {}}
         />
+      )}
+
+      {/* PIN Verification Modal */}
+      {pinModalOpen && (
+        <PinPromptModal
+          propertyId={p.id}
+          title={pinAction === 'edit' ? 'Enter PIN to Edit' : 'Enter PIN to Delete'}
+          actionDescription={
+            pinAction === 'edit'
+              ? 'Enter your 4-digit secret PIN to authorize editing this listing.'
+              : 'Enter your 4-digit secret PIN to authorize deleting this listing.'
+          }
+          onClose={() => setPinModalOpen(false)}
+          onSuccess={handlePinVerified}
+        />
+      )}
+
+      {/* Edit Property Modal */}
+      {editModalOpen && (
+        <EditPropertyModal
+          property={p}
+          verifiedPin={verifiedPin}
+          onClose={() => setEditModalOpen(false)}
+          onUpdated={handlePropertyUpdated}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-gray-100 p-5 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Delete Listing</h3>
+                <p className="text-xs text-gray-400">Permanently remove listing</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Are you sure you want to permanently delete this listing? This action cannot be undone.
+            </p>
+
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-xs font-bold text-white shadow-sm transition-colors flex items-center justify-center gap-1.5"
+              >
+                {deleting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Confirm Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

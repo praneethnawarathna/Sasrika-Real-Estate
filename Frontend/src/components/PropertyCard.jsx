@@ -1,5 +1,5 @@
-﻿import { Link } from 'react-router-dom';
-import { MapPin, Heart, BedDouble, Bath, Ruler, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Heart, BedDouble, Bath, Ruler, Sparkles, Edit3, Trash2 } from 'lucide-react';
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -18,7 +18,7 @@ const isLandOrHouseForSale = (p) =>
   (p.propertyType === 0 || p.propertyType === 1) && p.listingType === 0;
 const isRent = (p) => p.listingType === 1;
 
-export default function PropertyCard({ property: p }) {
+export default function PropertyCard({ property: p, onEdit, onDelete }) {
   const imgUrl =
     p.imageUrls?.[0] ||
     'https://placehold.co/800x500/e2e8f0/94a3b8?text=No+Image';
@@ -49,16 +49,48 @@ export default function PropertyCard({ property: p }) {
           >
             {isForSale ? 'FOR SALE' : 'FOR RENT'}
           </span>
-          {/* Heart favorite */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            className="absolute top-3 right-3 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-rose-500 transition-colors"
-          >
-            <Heart size={15} />
-          </button>
+
+          {/* Top Actions: Edit, Delete, Favorite */}
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+            {onEdit && (
+              <button
+                type="button"
+                title="Edit Listing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(p);
+                }}
+                className="w-8 h-8 bg-white/90 hover:bg-white text-gray-500 hover:text-emerald-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+              >
+                <Edit3 size={13} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                title="Delete Listing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(p);
+                }}
+                className="w-8 h-8 bg-white/90 hover:bg-white text-gray-500 hover:text-rose-600 rounded-full flex items-center justify-center shadow-sm transition-colors"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-rose-500 transition-colors"
+            >
+              <Heart size={15} />
+            </button>
+          </div>
         </div>
 
         {/* ── Body ── */}
@@ -118,15 +150,45 @@ export default function PropertyCard({ property: p }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50 text-xs">
             <span className="text-[11px] text-gray-400 font-medium">
-              ● Uploaded {timeAgo(p.createdAt)}
+              ● {timeAgo(p.createdAt)}
             </span>
-            {p.pricePerPerch && isLandOrHouseForSale(p) && (
-              <span className="text-[11px] text-emerald-600 font-bold">
-                LKR {Math.round(p.pricePerPerch).toLocaleString()}/perch
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {p.pricePerPerch && isLandOrHouseForSale(p) && (
+                <span className="text-[11px] text-emerald-600 font-bold mr-1">
+                  LKR {Math.round(p.pricePerPerch).toLocaleString()}/perch
+                </span>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  title="Edit listing"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit(p);
+                  }}
+                  className="p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                >
+                  <Edit3 size={13} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  title="Delete listing"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete(p);
+                  }}
+                  className="p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

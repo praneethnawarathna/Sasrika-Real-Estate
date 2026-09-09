@@ -22,6 +22,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Ensure wwwroot/uploads directory exists so UseStaticFiles can serve uploaded photos
+var uploadsDir = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -32,6 +39,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 
