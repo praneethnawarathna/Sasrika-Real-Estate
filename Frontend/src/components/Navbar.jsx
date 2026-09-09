@@ -1,19 +1,26 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Heart, User, Menu, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-
-const NAV_LINKS = [
-  { label: 'Explore', filter: 'all' },
-  { label: 'For Sale', filter: 'sale' },
-  { label: 'For Rent', filter: 'rent' },
-  { label: 'Land', filter: 'land' },
-  { label: 'About Us', filter: null },
-];
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
+  const isAbout = location.pathname === '/about';
+
+  const handleTabClick = (filter) => {
+    if (isHome) {
+      onFilterChange?.(filter);
+    } else {
+      // If on another page (e.g. /about or /property/:id), navigate to home with the filter query
+      if (filter === 'all') {
+        navigate('/');
+      } else {
+        navigate(`/?filter=${filter}`);
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -37,34 +44,56 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             </div>
           </Link>
 
-          {/* ── Center: Desktop Nav Links ── */}
-          {isHome && (
-            <nav className="hidden md:flex items-center gap-1">
-              {NAV_LINKS.map((link) => {
-                const isActive = link.filter !== null && activeFilter === link.filter;
-                return (
-                  <button
-                    key={link.label}
-                    onClick={() => link.filter !== null && onFilterChange?.(link.filter)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                      isActive
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                );
-              })}
-            </nav>
-          )}
-          {!isHome && (
-            <nav className="hidden md:flex items-center gap-1">
-              <Link to="/" className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-emerald-700 hover:bg-emerald-50 transition-all">
-                ← Back to Listings
-              </Link>
-            </nav>
-          )}
+          {/* ── Center: Desktop Navigation ── */}
+          <nav className="hidden md:flex items-center gap-1">
+            {/* 1. Explore */}
+            <button
+              onClick={() => handleTabClick('all')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                isHome && activeFilter === 'all'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              Explore
+            </button>
+
+            {/* 2. For Sale */}
+            <button
+              onClick={() => handleTabClick('sale')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                isHome && activeFilter === 'sale'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              For Sale
+            </button>
+
+            {/* 3. For Rent */}
+            <button
+              onClick={() => handleTabClick('rent')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                isHome && activeFilter === 'rent'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              For Rent
+            </button>
+
+            {/* 4. About Us (Dedicated /about route) */}
+            <Link
+              to="/about"
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                isAbout
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              About Us
+            </Link>
+          </nav>
 
           {/* ── Right: Actions ── */}
           <div className="flex items-center gap-2">
@@ -106,28 +135,59 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
         </div>
 
         {/* ── Mobile Dropdown Menu ── */}
-        {mobileOpen && isHome && (
+        {mobileOpen && (
           <div className="md:hidden border-t border-gray-100 py-3 pb-4">
             <div className="flex flex-wrap gap-2">
-              {NAV_LINKS.map((link) => {
-                const isActive = link.filter !== null && activeFilter === link.filter;
-                return (
-                  <button
-                    key={link.label}
-                    onClick={() => {
-                      if (link.filter !== null) onFilterChange?.(link.filter);
-                      setMobileOpen(false);
-                    }}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-                      isActive
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : 'text-gray-600 border-gray-200 hover:border-emerald-300'
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                );
-              })}
+              <button
+                onClick={() => {
+                  handleTabClick('all');
+                  setMobileOpen(false);
+                }}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+                  isHome && activeFilter === 'all'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                Explore
+              </button>
+              <button
+                onClick={() => {
+                  handleTabClick('sale');
+                  setMobileOpen(false);
+                }}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+                  isHome && activeFilter === 'sale'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                For Sale
+              </button>
+              <button
+                onClick={() => {
+                  handleTabClick('rent');
+                  setMobileOpen(false);
+                }}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+                  isHome && activeFilter === 'rent'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                For Rent
+              </button>
+              <Link
+                to="/about"
+                onClick={() => setMobileOpen(false)}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+                  isAbout
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'text-gray-600 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                About Us
+              </Link>
             </div>
           </div>
         )}

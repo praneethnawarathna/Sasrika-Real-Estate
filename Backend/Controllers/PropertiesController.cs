@@ -18,12 +18,101 @@ public class PropertiesController : ControllerBase
     }
 
     // ── GET /api/properties ──────────────────────────────────────────────────
+    // ── GET /api/properties ──────────────────────────────────────────────────
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Property>>> GetAll()
+    public async Task<ActionResult<IEnumerable<Property>>> GetAll([FromQuery] PropertyQueryParameters? query)
     {
-        var properties = await _context.Properties
-            .OrderByDescending(p => p.CreatedAt)
-            .ToListAsync();
+        var items = _context.Properties.AsNoTracking().AsQueryable();
+
+        if (query != null)
+        {
+            // 1. Search Term (Title, Description, City, District)
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+            {
+                var term = query.SearchTerm.Trim().ToLower();
+                items = items.Where(p =>
+                    p.Title.ToLower().Contains(term) ||
+                    p.Description.ToLower().Contains(term) ||
+                    p.City.ToLower().Contains(term) ||
+                    p.District.ToLower().Contains(term));
+            }
+
+            // 2. Listing Type (ForSale, ForRent, sale, rent, 0, 1)
+            if (!string.IsNullOrWhiteSpace(query.ListingType) &&
+                !query.ListingType.Equals("all", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Enum.TryParse<ListingType>(query.ListingType, true, out var parsedListingType))
+                {
+                    items = items.Where(p => p.ListingType == parsedListingType);
+                }
+                else if (query.ListingType.Equals("sale", StringComparison.OrdinalIgnoreCase))
+                {
+                    items = items.Where(p => p.ListingType == ListingType.ForSale);
+                }
+                else if (query.ListingType.Equals("rent", StringComparison.OrdinalIgnoreCase))
+                {
+                    items = items.Where(p => p.ListingType == ListingType.ForRent);
+                }
+            }
+
+            // 3. Property Type (House, Land, Commercial, 0, 1, 2)
+            if (!string.IsNullOrWhiteSpace(query.PropertyType) &&
+                !query.PropertyType.Equals("all", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Enum.TryParse<PropertyType>(query.PropertyType, true, out var parsedPropType))
+                {
+                    items = items.Where(p => p.PropertyType == parsedPropType);
+                }
+            }
+
+            // 4. District
+            if (!string.IsNullOrWhiteSpace(query.District) &&
+                !query.District.Equals("all", StringComparison.OrdinalIgnoreCase))
+            {
+                var district = query.District.Trim().ToLower();
+                items = items.Where(p => p.District.ToLower() == district);
+            }
+
+            // 5. City
+            if (!string.IsNullOrWhiteSpace(query.City))
+            {
+                var city = query.City.Trim().ToLower();
+                items = items.Where(p => p.City.ToLower().Contains(city));
+            }
+
+            // 6. Min and Max Price
+            if (query.MinPrice.HasValue)
+            {
+                items = items.Where(p => p.Price >= query.MinPrice.Value);
+            }
+            if (query.MaxPrice.HasValue)
+            {
+                items = items.Where(p => p.Price <= query.MaxPrice.Value);
+            }
+
+            // 7. Sorting
+            switch (query.SortBy?.ToLower())
+            {
+                case "price_asc":
+                case "price-low":
+                    items = items.OrderBy(p => p.Price);
+                    break;
+                case "price_desc":
+                case "price-high":
+                    items = items.OrderByDescending(p => p.Price);
+                    break;
+                case "newest":
+                default:
+                    items = items.OrderByDescending(p => p.CreatedAt);
+                    break;
+            }
+        }
+        else
+        {
+            items = items.OrderByDescending(p => p.CreatedAt);
+        }
+
+        var properties = await items.ToListAsync();
         return Ok(properties);
     }
 
