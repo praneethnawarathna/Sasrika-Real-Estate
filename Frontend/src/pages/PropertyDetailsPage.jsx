@@ -6,9 +6,12 @@ import {
   Home, BedDouble, Bath, Tag, Edit3, Trash2, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import AddPropertyModal from '../components/AddPropertyModal';
 import PinPromptModal from '../components/PinPromptModal';
 import EditPropertyModal from '../components/EditPropertyModal';
+import WhatsAppIcon from '../components/WhatsAppIcon';
+import { getWhatsAppUrl, formatDisplayPhone } from '../utils/phoneUtils';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
@@ -92,8 +95,10 @@ export default function PropertyDetailsPage() {
       ? p.imageUrls
       : ['https://placehold.co/1200x800/e2e8f0/94a3b8?text=No+Image'];
   const isForSale = p.listingType === 0;
-  const showPerches =
-    (p.propertyType === 0 || p.propertyType === 1) && p.listingType === 0;
+  const propTypeName = PROPERTY_TYPE_LABELS[p.propertyType] ?? 'Property';
+
+  const whatsAppUrl = getWhatsAppUrl(p.sellerPhone, p.title, p.price, p.isNegotiable);
+  const displayPhone = formatDisplayPhone(p.sellerPhone);
 
   const prevImg = () =>
     setActiveImg((i) => (i - 1 + images.length) % images.length);
@@ -189,21 +194,26 @@ export default function PropertyDetailsPage() {
                       'https://placehold.co/1200x800/e2e8f0/94a3b8?text=No+Image';
                   }}
                 />
-                {/* Overlay badges */}
-                <div className="absolute top-4 left-4 flex items-center gap-2">
+
+                {/* Overlay Badges: Dual Badges + Title Verification */}
+                <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap">
                   <span
-                    className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${
+                    className={`text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm tracking-wide ${
                       isForSale
                         ? 'bg-emerald-600 text-white'
                         : 'bg-indigo-600 text-white'
                     }`}
                   >
-                    {isForSale ? '# FOR SALE' : '# FOR RENT'}
+                    {isForSale ? 'FOR SALE' : 'FOR RENT'}
+                  </span>
+                  <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/95 text-gray-800 shadow-sm backdrop-blur-sm">
+                    {propTypeName}
                   </span>
                   <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/90 text-emerald-700 flex items-center gap-1.5 shadow-sm">
                     <CheckCircle2 size={12} /> Verified Title Deed
                   </span>
                 </div>
+
                 {/* Counter + Actions */}
                 <div className="absolute top-4 right-4 flex items-center gap-2">
                   <button className="w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-rose-500 transition-colors">
@@ -213,10 +223,12 @@ export default function PropertyDetailsPage() {
                     <Share2 size={16} />
                   </button>
                 </div>
+
                 {/* Image counter */}
                 <span className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
                   {activeImg + 1}/{images.length}
                 </span>
+
                 {/* Arrows */}
                 {images.length > 1 && (
                   <>
@@ -277,9 +289,9 @@ export default function PropertyDetailsPage() {
                 {p.title}
               </h1>
               <div className="flex items-center gap-3 mt-3 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                  <Home size={12} />
-                  {PROPERTY_TYPE_LABELS[p.propertyType] ?? 'Property'}
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full">
+                  <Home size={12} className="text-emerald-600" />
+                  {propTypeName}
                 </span>
                 <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
                   isForSale
@@ -289,6 +301,11 @@ export default function PropertyDetailsPage() {
                   <Tag size={12} />
                   {LISTING_TYPE_LABELS[p.listingType] ?? ''}
                 </span>
+                {p.referenceCode && (
+                  <span className="text-xs font-mono font-semibold text-gray-400 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-200">
+                    Ref: {p.referenceCode}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -300,10 +317,10 @@ export default function PropertyDetailsPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { icon: '✅', title: 'Clear Freehold', desc: 'Pedigree title bank-loan approved' },
-                  { icon: '📐', title: showPerches ? `${p.landSizePerches} Perches` : 'Size', desc: 'Land extent verified' },
-                  { icon: '⚡', title: '3-Phase & Water', desc: 'National grid ready connections' },
-                  { icon: '🚗', title: '5 Mins to City', desc: 'Quick access to city center' },
+                  { icon: '✅', title: 'Clear Freehold Title', desc: 'Pedigree title bank-loan approved' },
+                  { icon: '📐', title: p.landSizePerches != null ? `${p.landSizePerches} Perches Extent` : 'Land Extent Verified', desc: 'Survey plan and boundary marked' },
+                  { icon: '⚡', title: 'Electricity & Water', desc: 'National grid ready connections' },
+                  { icon: '🚗', title: `${p.city} Vicinity`, desc: 'Fast access to main roads & amenities' },
                 ].map((h) => (
                   <div key={h.title} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                     <span className="text-xl flex-shrink-0">{h.icon}</span>
@@ -357,13 +374,13 @@ export default function PropertyDetailsPage() {
                     </span>
                   ) : null}
                   {p.isNegotiable && (
-                    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
                       <Sparkles size={11} /> NEGOTIABLE
                     </span>
                   )}
                 </div>
-                {p.pricePerPerch && (
-                  <p className="text-sm text-gray-500">
+                {p.pricePerPerch && (p.propertyType === 0 || p.propertyType === 1) && (
+                  <p className="text-sm text-gray-500 mt-1">
                     Approx.{' '}
                     <strong className="text-gray-700">
                       {formatLKR(Math.round(p.pricePerPerch))}
@@ -373,9 +390,10 @@ export default function PropertyDetailsPage() {
                 )}
               </div>
 
-              {/* Quick Stats */}
+              {/* Quick Specs Grid */}
               <div className="grid grid-cols-2 gap-3">
-                {showPerches && p.landSizePerches != null && (
+                {/* Land Size: Shown for all types if specified */}
+                {p.landSizePerches != null && (
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                       <Ruler size={20} className="text-emerald-600" />
@@ -390,7 +408,9 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
                 )}
-                {p.bedrooms != null && (
+
+                {/* Bedrooms: ONLY for House (1) */}
+                {p.propertyType === 1 && p.bedrooms != null && p.bedrooms > 0 && (
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                       <BedDouble size={20} className="text-emerald-600" />
@@ -401,7 +421,9 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
                 )}
-                {p.bathrooms != null && (
+
+                {/* Bathrooms: for House (1) and Commercial (2) */}
+                {(p.propertyType === 1 || p.propertyType === 2) && p.bathrooms != null && p.bathrooms > 0 && (
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                       <Bath size={20} className="text-emerald-600" />
@@ -412,6 +434,7 @@ export default function PropertyDetailsPage() {
                     </div>
                   </div>
                 )}
+
                 <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex flex-col items-center gap-2">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                     <CheckCircle2 size={20} className="text-emerald-600" />
@@ -441,13 +464,10 @@ export default function PropertyDetailsPage() {
                     })}{' '}
                     ({timeAgo(p.createdAt)})
                   </span>
-                  <span className="font-mono font-bold text-gray-700 text-sm">
-                    {p.referenceCode}
-                  </span>
                 </div>
               </div>
 
-              {/* Seller Card */}
+              {/* Seller Card & Lead Generation Actions */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md flex-shrink-0">
@@ -457,33 +477,47 @@ export default function PropertyDetailsPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {p.sellerName}
+                      {p.sellerName || 'Sasrika Partner'}
                     </p>
-                    <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
-                      <CheckCircle2 size={11} /> Verified Sasrika Partner
+                    <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5 font-medium">
+                      <CheckCircle2 size={11} /> Verified Partner
                     </p>
                     <p className="font-mono text-sm text-gray-700 font-semibold mt-0.5">
-                      {p.sellerPhone}
+                      {displayPhone || p.sellerPhone}
                     </p>
                   </div>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  <a
-                    href={`tel:${p.sellerPhone}`}
-                    className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-3 text-sm shadow-sm transition-colors"
-                  >
-                    <Phone size={15} />
-                    Call Seller
-                  </a>
-                  <a
-                    href={`sms:${p.sellerPhone}`}
-                    className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl py-3 text-sm transition-colors"
-                  >
-                    <MessageSquare size={15} />
-                    Send SMS
-                  </a>
+                {/* Primary CTA Buttons: WhatsApp + Direct Call */}
+                <div className="space-y-2.5">
+                  {p.sellerPhone && (
+                    <a
+                      href={whatsAppUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl py-3 text-sm shadow-sm transition-all duration-200 hover:shadow-md"
+                    >
+                      <WhatsAppIcon size={18} />
+                      <span>Chat on WhatsApp</span>
+                    </a>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <a
+                      href={`tel:${p.sellerPhone}`}
+                      className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-xs shadow-sm transition-colors"
+                    >
+                      <Phone size={14} />
+                      Call Seller
+                    </a>
+                    <a
+                      href={`sms:${p.sellerPhone}`}
+                      className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl py-2.5 text-xs transition-colors"
+                    >
+                      <MessageSquare size={14} />
+                      Send SMS
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -494,7 +528,7 @@ export default function PropertyDetailsPage() {
                   Owner Actions
                 </p>
                 <p className="text-xs text-gray-500 mb-4">
-                  Manage your listing using your secret 4-digit PIN.
+                  Manage your listing securely using your 4-digit secret PIN.
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
@@ -517,6 +551,33 @@ export default function PropertyDetailsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Global Footer */}
+      <div className="pb-16 lg:pb-0">
+        <Footer />
+      </div>
+
+      {/* Mobile Bottom Fixed Lead Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-30 shadow-xl flex items-center gap-3">
+        {p.sellerPhone && (
+          <a
+            href={whatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl py-3 text-xs shadow-sm transition-colors"
+          >
+            <WhatsAppIcon size={16} />
+            <span>WhatsApp</span>
+          </a>
+        )}
+        <a
+          href={`tel:${p.sellerPhone}`}
+          className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-3 text-xs shadow-sm transition-colors"
+        >
+          <Phone size={15} />
+          <span>Call Seller</span>
+        </a>
       </div>
 
       {isModalOpen && (
