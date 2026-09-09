@@ -133,8 +133,11 @@ public class PropertiesController : ControllerBase
     public async Task<ActionResult<Property>> Create([FromBody] CreatePropertyDto dto)
     {
         decimal? calculatedPricePerPerch = null;
-        if (dto.LandSizePerches.HasValue && dto.LandSizePerches.Value > 0 && dto.Price > 0)
+        if (dto.ListingType == ListingType.ForSale && dto.PropertyType == PropertyType.Land &&
+            dto.LandSizePerches.HasValue && dto.LandSizePerches.Value > 0 && dto.Price > 0)
+        {
             calculatedPricePerPerch = dto.Price / dto.LandSizePerches.Value;
+        }
 
         var rng = new Random();
         var referenceCode = "#SR-" + rng.Next(10000, 99999).ToString();
@@ -196,10 +199,13 @@ public class PropertiesController : ControllerBase
         if (property.EditPin != dto.EditPin)
             return Unauthorized(new { message = "Invalid PIN. You are not authorised to edit this listing." });
 
-        // Recalculate price-per-perch
+        // Recalculate price-per-perch (ONLY for Land For Sale)
         decimal? pricePerPerch = null;
-        if (dto.LandSizePerches.HasValue && dto.LandSizePerches.Value > 0 && dto.Price > 0)
+        if (dto.ListingType == ListingType.ForSale && dto.PropertyType == PropertyType.Land &&
+            dto.LandSizePerches.HasValue && dto.LandSizePerches.Value > 0 && dto.Price > 0)
+        {
             pricePerPerch = dto.Price / dto.LandSizePerches.Value;
+        }
 
         property.Title = dto.Title;
         property.Description = dto.Description;

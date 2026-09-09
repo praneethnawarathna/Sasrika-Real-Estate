@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RealEstate.Api.Data;
+using RealEstate.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,5 +43,22 @@ app.UseCors("AllowFrontend");
 app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
+
+// Ensure PricePerPerch is strictly null for non-Land or non-ForSale properties
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var invalidPerchListings = db.Properties
+        .Where(p => (p.ListingType != ListingType.ForSale || p.PropertyType != PropertyType.Land) && p.PricePerPerch != null)
+        .ToList();
+    if (invalidPerchListings.Count > 0)
+    {
+        foreach (var item in invalidPerchListings)
+        {
+            item.PricePerPerch = null;
+        }
+        db.SaveChanges();
+    }
+}
 
 app.Run();

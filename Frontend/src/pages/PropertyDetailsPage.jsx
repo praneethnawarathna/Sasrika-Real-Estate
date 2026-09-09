@@ -94,8 +94,10 @@ export default function PropertyDetailsPage() {
     p.imageUrls?.length > 0
       ? p.imageUrls
       : ['https://placehold.co/1200x800/e2e8f0/94a3b8?text=No+Image'];
-  const isForSale = p.listingType === 0;
-  const propTypeName = PROPERTY_TYPE_LABELS[p.propertyType] ?? 'Property';
+  const isForSale = p.listingType === 0 || p.listingType === 'ForSale';
+  const isLand = p.propertyType === 0 || p.propertyType === 'Land';
+  const landSize = p.landSizePerches ?? p.landSize ?? 0;
+  const propTypeName = (typeof p.propertyType === 'number' ? PROPERTY_TYPE_LABELS[p.propertyType] : p.propertyType) ?? 'Property';
 
   const whatsAppUrl = getWhatsAppUrl(p.sellerPhone, p.title, p.price, p.isNegotiable);
   const displayPhone = formatDisplayPhone(p.sellerPhone);
@@ -365,25 +367,29 @@ export default function PropertyDetailsPage() {
               {/* Price Block */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-1">
-                  Listed Asking Price
+                  {isForSale ? 'Listed Asking Price' : 'Monthly Rental Rate'}
                 </p>
-                <div className="flex items-center gap-3 flex-wrap mb-1">
+                <div className="flex items-baseline gap-2 flex-wrap mb-1">
                   {p.price > 0 ? (
                     <span className="text-2xl font-black text-emerald-600 leading-none">
                       {formatLKR(p.price)}
                     </span>
                   ) : null}
+                  {!isForSale && p.price > 0 && (
+                    <span className="text-sm font-bold text-gray-500">/ month</span>
+                  )}
                   {p.isNegotiable && (
                     <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
                       <Sparkles size={11} /> NEGOTIABLE
                     </span>
                   )}
                 </div>
-                {p.pricePerPerch && (p.propertyType === 0 || p.propertyType === 1) && (
+                {/* ONLY show per-perch price for Land For Sale */}
+                {isForSale && isLand && landSize > 0 && (
                   <p className="text-sm text-gray-500 mt-1">
                     Approx.{' '}
                     <strong className="text-gray-700">
-                      {formatLKR(Math.round(p.pricePerPerch))}
+                      {formatLKR(Math.round(p.pricePerPerch || (p.price / landSize)))}
                     </strong>{' '}
                     per Perch
                   </p>
