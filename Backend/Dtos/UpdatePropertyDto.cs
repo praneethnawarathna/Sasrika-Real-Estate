@@ -3,7 +3,7 @@ using RealEstate.Api.Models;
 
 namespace RealEstate.Api.Dtos;
 
-public record CreatePropertyDto(
+public record UpdatePropertyDto(
     [Required, StringLength(150)] string Title,
     [Required, StringLength(2000)] string Description,
     decimal Price,
@@ -21,7 +21,6 @@ public record CreatePropertyDto(
     [Required] string SellerName,
     [Required] string SellerPhone,
 
-    [Required]
-    [RegularExpression(@"^\d{4}$", ErrorMessage = "PIN must be exactly 4 digits.")]
-    string EditPin
+    // Must match stored PIN to authorise the update
+    [Required] string EditPin
 );
