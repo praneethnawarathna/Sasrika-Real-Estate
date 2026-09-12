@@ -35,7 +35,11 @@ public class Property
     public string? RejectionReason { get; set; }
     public DateTime? ModeratedAt { get; set; }
 
-    // 4-digit secret PIN for edit/delete ownership — never exposed in API responses
+    // Listing status: Active vs Sold
+    public bool IsSold { get; set; } = false;
+
+    // Authenticated User Ownership
+    public Guid? UserId { get; set; }
     [JsonIgnore]
-    public string EditPin { get; set; } = string.Empty;
+    public User? User { get; set; }
 }

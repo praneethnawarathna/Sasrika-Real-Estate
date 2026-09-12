@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using RealEstate.Api.Models;
 
 namespace RealEstate.Api.Dtos;
@@ -17,11 +17,7 @@ public record CreatePropertyDto(
     int? Bedrooms,
     int? Bathrooms,
 
-    List<string> ImageUrls,
-    [Required] string SellerName,
-    [Required] string SellerPhone,
-
-    [Required]
-    [RegularExpression(@"^\d{4}$", ErrorMessage = "PIN must be exactly 4 digits.")]
-    string EditPin
+    List<string>? ImageUrls,
+    string? SellerName,
+    string? SellerPhone
 );

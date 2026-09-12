@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using RealEstate.Api.Models;
 
 namespace RealEstate.Api.Dtos;
@@ -17,10 +17,7 @@ public record UpdatePropertyDto(
     int? Bedrooms,
     int? Bathrooms,
 
-    List<string> ImageUrls,
-    [Required] string SellerName,
-    [Required] string SellerPhone,
-
-    // Must match stored PIN to authorise the update
-    [Required] string EditPin
+    List<string>? ImageUrls,
+    string? SellerName,
+    string? SellerPhone
 );

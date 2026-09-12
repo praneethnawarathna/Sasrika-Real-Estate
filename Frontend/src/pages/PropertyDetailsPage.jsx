@@ -8,11 +8,11 @@ import {
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AddPropertyModal from '../components/AddPropertyModal';
-import PinPromptModal from '../components/PinPromptModal';
 import EditPropertyModal from '../components/EditPropertyModal';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { getWhatsAppUrl, formatDisplayPhone } from '../utils/phoneUtils';
 import { useFavorites } from '../context/FavoritesContext';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
@@ -41,10 +41,7 @@ export default function PropertyDetailsPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 4-digit PIN ownership states
-  const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [pinAction, setPinAction] = useState(null); // 'edit' | 'delete'
-  const [verifiedPin, setVerifiedPin] = useState('');
+  const { user, authFetch } = useAuth();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -91,6 +88,8 @@ export default function PropertyDetailsPage() {
   }
 
   const p = property;
+  const canManage = user && (p.userId === user.id || user.role === 'Admin');
+
   const images =
     p.imageUrls?.length > 0
       ? p.imageUrls
@@ -110,26 +109,11 @@ export default function PropertyDetailsPage() {
     setActiveImg((i) => (i - 1 + images.length) % images.length);
   const nextImg = () => setActiveImg((i) => (i + 1) % images.length);
 
-  const handleOpenPinModal = (action) => {
-    setPinAction(action);
-    setPinModalOpen(true);
-  };
-
-  const handlePinVerified = (pin) => {
-    setVerifiedPin(pin);
-    setPinModalOpen(false);
-    if (pinAction === 'edit') {
-      setEditModalOpen(true);
-    } else if (pinAction === 'delete') {
-      setDeleteConfirmOpen(true);
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     setDeleting(true);
     setDeleteError('');
     try {
-      const res = await fetch(`${API_BASE}/${p.id}?pin=${encodeURIComponent(verifiedPin)}`, {
+      const res = await authFetch(`${API_BASE}/${p.id}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -164,22 +148,24 @@ export default function PropertyDetailsPage() {
             <ArrowLeft size={16} /> Back to Listings
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleOpenPinModal('edit')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-emerald-500 bg-white text-gray-700 hover:text-emerald-700 text-xs font-semibold shadow-sm transition-all"
-            >
-              <Edit3 size={14} className="text-emerald-600" />
-              Edit Listing
-            </button>
-            <button
-              onClick={() => handleOpenPinModal('delete')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-rose-400 bg-white text-gray-700 hover:text-rose-600 text-xs font-semibold shadow-sm transition-all"
-            >
-              <Trash2 size={14} className="text-rose-500" />
-              Delete Listing
-            </button>
-          </div>
+          {canManage && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEditModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-emerald-500 bg-white text-gray-700 hover:text-emerald-700 text-xs font-semibold shadow-sm transition-all"
+              >
+                <Edit3 size={14} className="text-emerald-600" />
+                Edit Listing
+              </button>
+              <button
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-rose-400 bg-white text-gray-700 hover:text-rose-600 text-xs font-semibold shadow-sm transition-all"
+              >
+                <Trash2 size={14} className="text-rose-500" />
+                Delete Listing
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Two-Column Desktop Layout ── */}
@@ -545,33 +531,6 @@ export default function PropertyDetailsPage() {
                 </div>
               </div>
 
-              {/* Owner Listing Management Card */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                  <ShieldCheck size={14} className="text-emerald-600" />
-                  Owner Actions
-                </p>
-                <p className="text-xs text-gray-500 mb-4">
-                  Manage your listing securely using your 4-digit secret PIN.
-                </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => handleOpenPinModal('edit')}
-                    className="flex items-center justify-center gap-1.5 border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl py-2.5 text-xs transition-colors"
-                  >
-                    <Edit3 size={14} className="text-emerald-600" />
-                    Edit Listing
-                  </button>
-                  <button
-                    onClick={() => handleOpenPinModal('delete')}
-                    className="flex items-center justify-center gap-1.5 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold rounded-xl py-2.5 text-xs transition-colors"
-                  >
-                    <Trash2 size={14} className="text-rose-500" />
-                    Delete Listing
-                  </button>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>
@@ -611,26 +570,10 @@ export default function PropertyDetailsPage() {
         />
       )}
 
-      {/* PIN Verification Modal */}
-      {pinModalOpen && (
-        <PinPromptModal
-          propertyId={p.id}
-          title={pinAction === 'edit' ? 'Enter PIN to Edit' : 'Enter PIN to Delete'}
-          actionDescription={
-            pinAction === 'edit'
-              ? 'Enter your 4-digit secret PIN to authorize editing this listing.'
-              : 'Enter your 4-digit secret PIN to authorize deleting this listing.'
-          }
-          onClose={() => setPinModalOpen(false)}
-          onSuccess={handlePinVerified}
-        />
-      )}
-
       {/* Edit Property Modal */}
       {editModalOpen && (
         <EditPropertyModal
           property={p}
-          verifiedPin={verifiedPin}
           onClose={() => setEditModalOpen(false)}
           onUpdated={handlePropertyUpdated}
         />

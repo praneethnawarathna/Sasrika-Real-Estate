@@ -223,17 +223,19 @@ export default function PropertyCard({ property: p, onEdit, onDelete }) {
 
               {/* Quick WhatsApp Lead Chat Button */}
               {p.sellerPhone && (
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open(whatsAppUrl, '_blank', 'noopener,noreferrer');
+                  }}
                   title="Chat on WhatsApp"
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-[11px] shadow-sm transition-all"
                 >
                   <WhatsAppIcon size={12} />
                   <span>Chat</span>
-                </a>
+                </button>
               )}
             </div>
           </div>

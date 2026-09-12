@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User, Edit3, Check } from 'lucide-react';
 import ImageUploadField from './ImageUploadField';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
 export default function EditPropertyModal({
   property,
-  verifiedPin,
   onClose,
   onUpdated,
 }) {
+  const { authFetch } = useAuth();
+
   const [form, setForm] = useState({
     title: property.title || '',
     description: property.description || '',
@@ -29,6 +32,14 @@ export default function EditPropertyModal({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Lock background scroll
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,13 +72,12 @@ export default function EditPropertyModal({
         landSizePerches: form.landSizePerches === '' ? null : Number(form.landSizePerches),
         bedrooms: isHouse && form.bedrooms !== '' ? Number(form.bedrooms) : null,
         bathrooms: (isHouse || isCommercial) && form.bathrooms !== '' ? Number(form.bathrooms) : null,
-        imageUrls: form.imageUrls.length > 0 ? form.imageUrls : (property.imageUrls || []),
+        imageUrls: form.imageUrls.length > 0 ? form.imageUrls : property.imageUrls || [],
         sellerName: form.sellerName,
         sellerPhone: form.sellerPhone,
-        editPin: verifiedPin,
       };
 
-      const res = await fetch(`${API_BASE}/${property.id}`, {
+      const res = await authFetch(`${API_BASE}/${property.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -97,31 +107,43 @@ export default function EditPropertyModal({
   const isHouse = selectedType === 1;
   const isCommercial = selectedType === 2;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Dialog */}
+      <div
+        className="relative bg-white w-full sm:max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto z-10 border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
-          <div className="flex items-center gap-2">
+        <div className="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-100 z-10">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Edit3 size={16} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Edit Listing</h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Ref: <span className="font-mono font-semibold text-gray-600">{property.referenceCode}</span>
-              </p>
+              <h2 className="text-base font-extrabold text-gray-900">Edit Listing</h2>
+              <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                {property.referenceCode}
+              </span>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center transition-colors"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Title */}
           <div>
             <label className={labelCls}>Property Title *</label>
@@ -132,83 +154,38 @@ export default function EditPropertyModal({
               value={form.title}
               onChange={handleChange}
               className={inputCls}
-              placeholder="e.g. Prime Residential Land in Kandy"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Description</label>
+            <label className={labelCls}>Description *</label>
             <textarea
               name="description"
+              required
               rows={3}
               value={form.description}
               onChange={handleChange}
-              className={inputCls}
-              placeholder="Describe the property..."
+              className={`${inputCls} resize-none`}
             />
           </div>
 
-          {/* Price + Negotiable */}
+          {/* Listing Type & Property Type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Price (LKR)</label>
-              <input
-                type="number"
-                name="price"
-                value={form.price}
+              <label className={labelCls}>Listing Type *</label>
+              <select
+                name="listingType"
+                value={form.listingType}
                 onChange={handleChange}
                 className={inputCls}
-                placeholder="e.g. 18500000"
-              />
-            </div>
-            <div className="flex flex-col justify-center">
-              <label className={labelCls}>Negotiable?</label>
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  name="isNegotiable"
-                  checked={form.isNegotiable}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded accent-emerald-600"
-                />
-                <span className="text-sm text-gray-600">Yes, negotiable</span>
-              </label>
-            </div>
-          </div>
-
-          {/* City + District */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>City *</label>
-              <input
-                type="text"
-                name="city"
-                required
-                value={form.city}
-                onChange={handleChange}
-                className={inputCls}
-                placeholder="e.g. Kandy"
-              />
+              >
+                <option value={0}>For Sale</option>
+                <option value={1}>For Rent</option>
+              </select>
             </div>
             <div>
-              <label className={labelCls}>District *</label>
-              <input
-                type="text"
-                name="district"
-                required
-                value={form.district}
-                onChange={handleChange}
-                className={inputCls}
-                placeholder="e.g. Central Province"
-              />
-            </div>
-          </div>
-
-          {/* Property Type + Listing Type */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Property Type</label>
+              <label className={labelCls}>Property Type *</label>
               <select
                 name="propertyType"
                 value={form.propertyType}
@@ -220,81 +197,130 @@ export default function EditPropertyModal({
                 <option value={2}>Commercial</option>
               </select>
             </div>
-            <div>
-              <label className={labelCls}>Listing Type</label>
-              <select
-                name="listingType"
-                value={form.listingType}
+          </div>
+
+          {/* Price & Negotiable */}
+          <div>
+            <label className={labelCls}>Price (LKR) *</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                name="price"
+                min={0}
+                value={form.price}
                 onChange={handleChange}
                 className={inputCls}
-              >
-                <option value={0}>For Sale</option>
-                <option value={1}>For Rent</option>
-              </select>
+              />
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="isNegotiable"
+                  checked={form.isNegotiable}
+                  onChange={handleChange}
+                  className="rounded text-emerald-600 focus:ring-emerald-400"
+                />
+                Negotiable
+              </label>
             </div>
           </div>
 
-          {/* Specifications - Conditionally rendered based on Property Type */}
-          <div
-            className={`grid gap-3 transition-all duration-200 ${
-              isLand ? 'grid-cols-1' : isCommercial ? 'grid-cols-2' : 'grid-cols-3'
-            }`}
-          >
+          {/* City & District */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>City / Town *</label>
+              <input
+                type="text"
+                name="city"
+                required
+                value={form.city}
+                onChange={handleChange}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>District *</label>
+              <input
+                type="text"
+                name="district"
+                required
+                value={form.district}
+                onChange={handleChange}
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Conditional Specs */}
+          <div className="space-y-3 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-100">
             <div>
               <label className={labelCls}>
-                {isCommercial ? 'Floor Area / Land (Perches)' : 'Land (Perches)'}
+                Land Size (Perches) {isLand && <span className="text-rose-500">*</span>}
               </label>
               <input
                 type="number"
-                step="0.1"
                 name="landSizePerches"
+                step="0.1"
+                min={0}
+                required={isLand}
                 value={form.landSizePerches}
                 onChange={handleChange}
                 className={inputCls}
-                placeholder="e.g. 15.5"
               />
             </div>
 
             {isHouse && (
-              <div className="transition-all duration-200">
-                <label className={labelCls}>Bedrooms</label>
-                <input
-                  type="number"
-                  name="bedrooms"
-                  value={form.bedrooms}
-                  onChange={handleChange}
-                  className={inputCls}
-                  placeholder="e.g. 3"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Bedrooms</label>
+                  <input
+                    type="number"
+                    name="bedrooms"
+                    min={0}
+                    value={form.bedrooms}
+                    onChange={handleChange}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Bathrooms</label>
+                  <input
+                    type="number"
+                    name="bathrooms"
+                    min={0}
+                    value={form.bathrooms}
+                    onChange={handleChange}
+                    className={inputCls}
+                  />
+                </div>
               </div>
             )}
 
-            {(isHouse || isCommercial) && (
-              <div className="transition-all duration-200">
-                <label className={labelCls}>Bathrooms</label>
+            {isCommercial && (
+              <div>
+                <label className={labelCls}>Bathrooms / Washrooms</label>
                 <input
                   type="number"
                   name="bathrooms"
+                  min={0}
                   value={form.bathrooms}
                   onChange={handleChange}
                   className={inputCls}
-                  placeholder="e.g. 2"
                 />
               </div>
             )}
           </div>
 
-          {/* Property Photos (Multi-File Uploader) */}
-          <ImageUploadField
-            images={form.imageUrls}
-            onChange={(imgs) => setForm((prev) => ({ ...prev, imageUrls: imgs }))}
-          />
+          {/* Photos */}
+          <div>
+            <label className={labelCls}>Photos (Max 10)</label>
+            <ImageUploadField
+              imageUrls={form.imageUrls}
+              onChange={(urls) => setForm((prev) => ({ ...prev, imageUrls: urls }))}
+            />
+          </div>
 
-          {/* Seller Info */}
-          <div className="bg-emerald-50 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-              <User size={13} /> Seller Contact
-            </p>
+          {/* Seller Details */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Seller Name *</label>
               <input
@@ -304,7 +330,6 @@ export default function EditPropertyModal({
                 value={form.sellerName}
                 onChange={handleChange}
                 className={inputCls}
-                placeholder="e.g. Chaminda Senanayake"
               />
             </div>
             <div>
@@ -316,42 +341,36 @@ export default function EditPropertyModal({
                 value={form.sellerPhone}
                 onChange={handleChange}
                 className={inputCls}
-                placeholder="e.g. +94 77 123 4567"
               />
             </div>
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
               {error}
             </p>
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 font-semibold rounded-xl py-2.5 text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-gray-200 text-gray-600 font-bold rounded-xl py-2.5 text-sm hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold rounded-xl py-2.5 text-sm shadow-sm transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold rounded-xl py-2.5 text-sm shadow-sm transition-colors"
             >
-              {loading ? (
-                'Saving...'
-              ) : (
-                <>
-                  <Check size={16} /> Save Changes
-                </>
-              )}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

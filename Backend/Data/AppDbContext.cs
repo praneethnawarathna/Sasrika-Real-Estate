@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealEstate.Api.Models;
 using System.Text.Json;
@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Property> Properties => Set<Property>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,5 +27,17 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Property>()
             .Property(p => p.ImageUrls)
             .HasConversion(imageUrlsConverter);
+
+        // User unique email index
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        // Relationship between User and Property
+        modelBuilder.Entity<Property>()
+            .HasOne(p => p.User)
+            .WithMany(u => u.Properties)
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
