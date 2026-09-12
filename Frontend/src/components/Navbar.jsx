@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Plus, Heart, User, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useFavorites } from '../context/FavoritesContext';
+import SavedListingsModal from './SavedListingsModal';
 
 export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [savedModalOpen, setSavedModalOpen] = useState(false);
+  const { favoritesCount } = useFavorites();
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
@@ -23,7 +27,8 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+    <>
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
@@ -111,8 +116,23 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             </button>
 
             {/* Favorites */}
-            <button className="hidden md:flex p-2.5 rounded-xl text-gray-500 hover:text-rose-500 hover:bg-rose-50 transition-colors">
-              <Heart size={18} />
+            <button
+              type="button"
+              title="Saved Properties"
+              onClick={() => setSavedModalOpen(true)}
+              className="relative p-2.5 rounded-xl text-gray-500 hover:text-rose-500 hover:bg-rose-50 transition-colors flex items-center justify-center"
+            >
+              <Heart
+                size={18}
+                className={`transition-transform duration-200 ${
+                  favoritesCount > 0 ? 'text-rose-500 fill-rose-500 scale-105' : ''
+                }`}
+              />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-extrabold rounded-full h-4.5 min-w-[18px] px-1 flex items-center justify-center shadow-sm animate-pulse-once">
+                  {favoritesCount}
+                </span>
+              )}
             </button>
 
             {/* User */}
@@ -180,10 +200,27 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
               >
                 About Us
               </Link>
+              <button
+                onClick={() => {
+                  setSavedModalOpen(true);
+                  setMobileOpen(false);
+                }}
+                className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all border text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-600 flex items-center gap-1.5"
+              >
+                <Heart size={14} className={favoritesCount > 0 ? 'fill-rose-500 text-rose-500' : ''} />
+                <span>Saved ({favoritesCount})</span>
+              </button>
             </div>
           </div>
         )}
       </div>
     </header>
+
+      {/* ── Saved Listings Modal ── */}
+      <SavedListingsModal
+        isOpen={savedModalOpen}
+        onClose={() => setSavedModalOpen(false)}
+      />
+    </>
   );
 }

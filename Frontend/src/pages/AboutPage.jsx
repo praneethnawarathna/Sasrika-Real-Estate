@@ -174,7 +174,7 @@ export default function AboutPage() {
                 </div>
                 <h4 className="font-bold text-gray-900 text-sm">Headquarters</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Sasrika Real Estate Hub<br />Colombo 03 &amp; Kandy, Sri Lanka
+                  Sasrika Real Estate PVT<br /> 117 4/B Lewella, Kandy,<br />Sri Lanka
                 </p>
               </div>
 
@@ -184,7 +184,7 @@ export default function AboutPage() {
                 </div>
                 <h4 className="font-bold text-gray-900 text-sm">Direct Phone</h4>
                 <p className="text-xs text-gray-500 leading-relaxed font-mono">
-                  +94 77 000 0000<br />+94 11 200 0000
+                  +94 77 253 9492<br />+94 78 866 8851
                 </p>
               </div>
 

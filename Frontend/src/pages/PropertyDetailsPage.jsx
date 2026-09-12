@@ -12,6 +12,7 @@ import PinPromptModal from '../components/PinPromptModal';
 import EditPropertyModal from '../components/EditPropertyModal';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { getWhatsAppUrl, formatDisplayPhone } from '../utils/phoneUtils';
+import { useFavorites } from '../context/FavoritesContext';
 
 const API_BASE = 'http://localhost:5143/api/properties';
 
@@ -101,6 +102,9 @@ export default function PropertyDetailsPage() {
 
   const whatsAppUrl = getWhatsAppUrl(p.sellerPhone, p.title, p.price, p.isNegotiable);
   const displayPhone = formatDisplayPhone(p.sellerPhone);
+
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const saved = isFavorite(p?.id);
 
   const prevImg = () =>
     setActiveImg((i) => (i - 1 + images.length) % images.length);
@@ -218,8 +222,22 @@ export default function PropertyDetailsPage() {
 
                 {/* Counter + Actions */}
                 <div className="absolute top-4 right-4 flex items-center gap-2">
-                  <button className="w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-rose-500 transition-colors">
-                    <Heart size={16} />
+                  <button
+                    type="button"
+                    title={saved ? 'Remove from saved' : 'Save property'}
+                    onClick={() => toggleFavorite(p.id)}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${
+                      saved
+                        ? 'bg-rose-50 text-rose-500 scale-105'
+                        : 'bg-white/90 hover:bg-white text-gray-500 hover:text-rose-500'
+                    }`}
+                  >
+                    <Heart
+                      size={16}
+                      className={`transition-colors duration-200 ${
+                        saved ? 'fill-rose-500 text-rose-500' : ''
+                      }`}
+                    />
                   </button>
                   <button className="w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-500 transition-colors">
                     <Share2 size={16} />
