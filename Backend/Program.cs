@@ -7,14 +7,26 @@ using RealEstate.Api.Data;
 using RealEstate.Api.Models;
 using RealEstate.Api.Services;
 
+// Enable legacy timestamp behavior for Npgsql to prevent DateTime UTC casting mismatch
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure PostgreSQL Database
-var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Port=5432;Database=sasrikadb;Username=postgres;Password=postgres;SSL Mode=Prefer;Trust Server Certificate=true";
+// ── 1. Configure PostgreSQL Connection String ──────────────────────────────
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+string connectionString;
 
-var connectionString = ParsePostgreSqlConnectionString(rawConnectionString);
+if (!string.IsNullOrEmpty(databaseUrl) && (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://")))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    connectionString = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={(userInfo.Length > 1 ? userInfo[1] : "")};SSL Mode=Prefer;Trust Server Certificate=true";
+}
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -95,7 +107,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Database Migration / Initialization & Seed Data
+// ── 2. Database Migration / Schema Creation & Seed Data ─────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -107,6 +119,58 @@ using (var scope = app.Services.CreateScope())
 
         // Create database tables if they do not exist
         db.Database.EnsureCreated();
+
+        // Safely ensure PostgreSQL tables and columns exist even on pre-created databases
+        try
+        {
+            db.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""Users"" (
+                    ""Id"" uuid NOT NULL PRIMARY KEY,
+                    ""FirstName"" text NOT NULL,
+                    ""LastName"" text NOT NULL,
+                    ""Email"" text NOT NULL,
+                    ""PasswordHash"" text NULL,
+                    ""PhoneNumber"" text NULL,
+                    ""ProfilePictureUrl"" text NULL,
+                    ""Role"" text NOT NULL DEFAULT 'User',
+                    ""GoogleId"" text NULL,
+                    ""CreatedAt"" timestamp with time zone NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Users_Email"" ON ""Users"" (""Email"");
+
+                CREATE TABLE IF NOT EXISTS ""Properties"" (
+                    ""Id"" uuid NOT NULL PRIMARY KEY,
+                    ""ReferenceCode"" text NOT NULL,
+                    ""Title"" text NOT NULL,
+                    ""Description"" text NOT NULL,
+                    ""Price"" numeric NOT NULL,
+                    ""IsNegotiable"" boolean NOT NULL,
+                    ""City"" text NOT NULL,
+                    ""District"" text NOT NULL,
+                    ""PropertyType"" integer NOT NULL,
+                    ""ListingType"" integer NOT NULL,
+                    ""LandSizePerches"" numeric NULL,
+                    ""Bedrooms"" integer NULL,
+                    ""Bathrooms"" integer NULL,
+                    ""PricePerPerch"" numeric NULL,
+                    ""ImageUrls"" text NOT NULL,
+                    ""SellerName"" text NOT NULL,
+                    ""SellerPhone"" text NOT NULL,
+                    ""ViewCount"" integer NOT NULL DEFAULT 0,
+                    ""CreatedAt"" timestamp with time zone NOT NULL,
+                    ""Status"" integer NOT NULL DEFAULT 0,
+                    ""RejectionReason"" text NULL,
+                    ""ModeratedAt"" timestamp with time zone NULL,
+                    ""IsSold"" boolean NOT NULL DEFAULT false,
+                    ""UserId"" uuid NULL REFERENCES ""Users"" (""Id"") ON DELETE SET NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_Properties_UserId"" ON ""Properties"" (""UserId"");
+            ");
+        }
+        catch (Exception ddlEx)
+        {
+            logger.LogWarning(ddlEx, "Secondary DDL check completed: {Message}", ddlEx.Message);
+        }
 
         // Ensure a default Admin user exists
         var adminEmail = "admin@sasrika.lk";
@@ -162,28 +226,3 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
-
-// Helper method to parse PostgreSQL URI format (postgres:// or postgresql://) into standard Npgsql connection string
-static string ParsePostgreSqlConnectionString(string rawConnection)
-{
-    if (string.IsNullOrWhiteSpace(rawConnection))
-    {
-        return rawConnection;
-    }
-
-    if (rawConnection.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
-        rawConnection.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
-    {
-        var uri = new Uri(rawConnection);
-        var userInfoParts = uri.UserInfo.Split(':', 2);
-        var username = userInfoParts.Length > 0 ? Uri.UnescapeDataString(userInfoParts[0]) : "";
-        var password = userInfoParts.Length > 1 ? Uri.UnescapeDataString(userInfoParts[1]) : "";
-        var host = uri.Host;
-        var port = uri.Port > 0 ? uri.Port : 5432;
-        var database = uri.AbsolutePath.TrimStart('/');
-
-        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
-    }
-
-    return rawConnection;
-}
