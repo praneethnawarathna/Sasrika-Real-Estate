@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RealEstate.Api.Data;
@@ -17,7 +19,6 @@ public class PropertiesController : ControllerBase
         _context = context;
     }
 
-    // ── GET /api/properties ──────────────────────────────────────────────────
     // ── GET /api/properties ──────────────────────────────────────────────────
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Property>>> GetAll([FromQuery] PropertyQueryParameters? query)
@@ -116,12 +117,45 @@ public class PropertiesController : ControllerBase
         return Ok(properties);
     }
 
+    // ── GET /api/properties/my-listings ──────────────────────────────────────
+    [Authorize]
+    [HttpGet("my-listings")]
+    public async Task<ActionResult<IEnumerable<Property>>> GetMyListings()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var listings = await _context.Properties
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return Ok(listings);
+    }
+
     // ── GET /api/properties/{id} ─────────────────────────────────────────────
     [HttpGet("{id}")]
     public async Task<ActionResult<Property>> GetById(Guid id)
     {
         var property = await _context.Properties.FindAsync(id);
-        if (property == null || property.Status != ModerationStatus.Approved) return NotFound();
+        if (property == null) return NotFound();
+
+        // If not approved, allow only owner or admin to view it
+        if (property.Status != ModerationStatus.Approved)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isOwner = Guid.TryParse(userIdStr, out var userId) && property.UserId == userId;
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isOwner && !isAdmin)
+            {
+                return NotFound();
+            }
+        }
 
         property.ViewCount += 1;
         await _context.SaveChangesAsync();
@@ -129,9 +163,22 @@ public class PropertiesController : ControllerBase
     }
 
     // ── POST /api/properties ─────────────────────────────────────────────────
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<Property>> Create([FromBody] CreatePropertyDto dto)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return Unauthorized(new { message = "User not found." });
+        }
+
         decimal? calculatedPricePerPerch = null;
         if (dto.ListingType == ListingType.ForSale && dto.PropertyType == PropertyType.Land &&
             dto.LandSizePerches.HasValue && dto.LandSizePerches.Value > 0 && dto.Price > 0)
@@ -146,16 +193,25 @@ public class PropertiesController : ControllerBase
             ? dto.ImageUrls
             : new List<string> { "https://placehold.co/800x500/e2e8f0/94a3b8?text=No+Image" };
 
+        var sellerName = !string.IsNullOrWhiteSpace(dto.SellerName)
+            ? dto.SellerName.Trim()
+            : $"{user.FirstName} {user.LastName}".Trim();
+
+        var sellerPhone = !string.IsNullOrWhiteSpace(dto.SellerPhone)
+            ? dto.SellerPhone.Trim()
+            : user.PhoneNumber ?? string.Empty;
+
         var property = new Property
         {
             Id = Guid.NewGuid(),
+            UserId = userId,
             ReferenceCode = referenceCode,
-            Title = dto.Title,
-            Description = dto.Description,
+            Title = dto.Title.Trim(),
+            Description = dto.Description.Trim(),
             Price = dto.Price,
             IsNegotiable = dto.IsNegotiable,
-            City = dto.City,
-            District = dto.District,
+            City = dto.City.Trim(),
+            District = dto.District.Trim(),
             PropertyType = dto.PropertyType,
             ListingType = dto.ListingType,
             LandSizePerches = dto.LandSizePerches,
@@ -163,10 +219,10 @@ public class PropertiesController : ControllerBase
             Bathrooms = dto.Bathrooms,
             PricePerPerch = calculatedPricePerPerch,
             ImageUrls = imageUrls,
-            SellerName = dto.SellerName,
-            SellerPhone = dto.SellerPhone,
-            EditPin = dto.EditPin,
+            SellerName = sellerName,
+            SellerPhone = sellerPhone,
             Status = ModerationStatus.Pending,
+            IsSold = false,
             ViewCount = 0,
             CreatedAt = DateTime.UtcNow
         };
@@ -176,28 +232,22 @@ public class PropertiesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = property.Id }, property);
     }
 
-    // ── POST /api/properties/{id}/verify-pin ─────────────────────────────────
-    [HttpPost("{id}/verify-pin")]
-    public async Task<IActionResult> VerifyPin(Guid id, [FromBody] VerifyPinDto dto)
-    {
-        var property = await _context.Properties.FindAsync(id);
-        if (property == null) return NotFound();
-
-        if (property.EditPin != dto.EditPin)
-            return Unauthorized(new { message = "Incorrect PIN. Please try again." });
-
-        return Ok(new { isValid = true });
-    }
-
     // ── PUT /api/properties/{id} ─────────────────────────────────────────────
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<Property>> Update(Guid id, [FromBody] UpdatePropertyDto dto)
     {
         var property = await _context.Properties.FindAsync(id);
         if (property == null) return NotFound();
 
-        if (property.EditPin != dto.EditPin)
-            return Unauthorized(new { message = "Invalid PIN. You are not authorised to edit this listing." });
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isOwner = Guid.TryParse(userIdStr, out var userId) && property.UserId == userId;
+        var isAdmin = User.IsInRole("Admin");
+
+        if (!isOwner && !isAdmin)
+        {
+            return Forbid();
+        }
 
         // Recalculate price-per-perch (ONLY for Land For Sale)
         decimal? pricePerPerch = null;
@@ -207,48 +257,75 @@ public class PropertiesController : ControllerBase
             pricePerPerch = dto.Price / dto.LandSizePerches.Value;
         }
 
-        property.Title = dto.Title;
-        property.Description = dto.Description;
+        property.Title = dto.Title.Trim();
+        property.Description = dto.Description.Trim();
         property.Price = dto.Price;
         property.IsNegotiable = dto.IsNegotiable;
-        property.City = dto.City;
-        property.District = dto.District;
+        property.City = dto.City.Trim();
+        property.District = dto.District.Trim();
         property.PropertyType = dto.PropertyType;
         property.ListingType = dto.ListingType;
         property.LandSizePerches = dto.LandSizePerches;
         property.Bedrooms = dto.Bedrooms;
         property.Bathrooms = dto.Bathrooms;
         property.PricePerPerch = pricePerPerch;
-        property.ImageUrls = (dto.ImageUrls != null && dto.ImageUrls.Count > 0)
-            ? dto.ImageUrls
-            : property.ImageUrls;
-        property.SellerName = dto.SellerName;
-        property.SellerPhone = dto.SellerPhone;
+
+        if (dto.ImageUrls != null && dto.ImageUrls.Count > 0)
+        {
+            property.ImageUrls = dto.ImageUrls;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.SellerName))
+        {
+            property.SellerName = dto.SellerName.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(dto.SellerPhone))
+        {
+            property.SellerPhone = dto.SellerPhone.Trim();
+        }
 
         await _context.SaveChangesAsync();
         return Ok(property);
     }
 
-    // ── DELETE /api/properties/{id}?pin=XXXX ─────────────────────────────────
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id, [FromQuery] string? pin)
+    // ── PATCH /api/properties/{id}/toggle-sold ───────────────────────────────
+    [Authorize]
+    [HttpPatch("{id}/toggle-sold")]
+    public async Task<ActionResult<Property>> ToggleSold(Guid id)
     {
         var property = await _context.Properties.FindAsync(id);
         if (property == null) return NotFound();
 
-        string? suppliedPin = pin;
-        if (string.IsNullOrWhiteSpace(suppliedPin) && Request.HasJsonContentType())
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isOwner = Guid.TryParse(userIdStr, out var userId) && property.UserId == userId;
+        var isAdmin = User.IsInRole("Admin");
+
+        if (!isOwner && !isAdmin)
         {
-            try
-            {
-                var body = await Request.ReadFromJsonAsync<VerifyPinDto>();
-                suppliedPin = body?.EditPin;
-            }
-            catch { }
+            return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(suppliedPin) || property.EditPin != suppliedPin)
-            return Unauthorized(new { message = "Invalid PIN. You are not authorised to delete this listing." });
+        property.IsSold = !property.IsSold;
+        await _context.SaveChangesAsync();
+        return Ok(property);
+    }
+
+    // ── DELETE /api/properties/{id} ──────────────────────────────────────────
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var property = await _context.Properties.FindAsync(id);
+        if (property == null) return NotFound();
+
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isOwner = Guid.TryParse(userIdStr, out var userId) && property.UserId == userId;
+        var isAdmin = User.IsInRole("Admin");
+
+        if (!isOwner && !isAdmin)
+        {
+            return Forbid();
+        }
 
         _context.Properties.Remove(property);
         await _context.SaveChangesAsync();

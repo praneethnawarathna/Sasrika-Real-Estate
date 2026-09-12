@@ -100,9 +100,8 @@ public class PropertyService : IPropertyService
             Bathrooms = dto.Bathrooms,
             PricePerPerch = pricePerPerch,
             ImageUrls = dto.ImageUrls ?? new List<string>(),
-            SellerName = dto.SellerName,
-            SellerPhone = dto.SellerPhone,
-            EditPin = dto.EditPin,
+            SellerName = dto.SellerName ?? string.Empty,
+            SellerPhone = dto.SellerPhone ?? string.Empty,
             ViewCount = 0,
             CreatedAt = DateTime.UtcNow
         };
