@@ -9,9 +9,15 @@ using RealEstate.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register SQLite Database
+// Configure PostgreSQL Database
+var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Host=localhost;Port=5432;Database=sasrikadb;Username=postgres;Password=postgres;SSL Mode=Prefer;Trust Server Certificate=true";
+
+var connectionString = ParsePostgreSqlConnectionString(rawConnectionString);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Password Hasher service
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -89,81 +95,95 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Database Migration / Initialization & Data Sanitization
+// Database Migration / Initialization & Seed Data
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
-
-    // Create database tables if they do not exist (adds Users table, new columns, etc.)
-    db.Database.EnsureCreated();
-
-    // Safely ensure Users table exists in SQLite
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS Users (
-            Id TEXT PRIMARY KEY,
-            FirstName TEXT NOT NULL,
-            LastName TEXT NOT NULL,
-            Email TEXT NOT NULL,
-            PasswordHash TEXT NULL,
-            PhoneNumber TEXT NULL,
-            ProfilePictureUrl TEXT NULL,
-            Role TEXT NOT NULL DEFAULT 'User',
-            GoogleId TEXT NULL,
-            CreatedAt TEXT NOT NULL
-        );
-        CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_Email ON Users (Email);
-    ");
-
-    // Safely ensure new columns exist in existing SQLite databases
-    try { db.Database.ExecuteSqlRaw("ALTER TABLE Properties ADD COLUMN UserId TEXT NULL;"); } catch { }
-    try { db.Database.ExecuteSqlRaw("ALTER TABLE Properties ADD COLUMN IsSold INTEGER NOT NULL DEFAULT 0;"); } catch { }
-
-    // Ensure a default Admin user exists
-    var adminEmail = "admin@sasrika.lk";
-    var adminUser = db.Users.FirstOrDefault(u => u.Email == adminEmail);
-    if (adminUser == null)
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    try
     {
-        adminUser = new User
-        {
-            Id = Guid.NewGuid(),
-            FirstName = "Sasrika",
-            LastName = "Admin",
-            Email = adminEmail,
-            PhoneNumber = "0771234567",
-            Role = "Admin",
-            CreatedAt = DateTime.UtcNow
-        };
-        adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "Admin@2026");
-        db.Users.Add(adminUser);
-        db.SaveChanges();
-    }
+        var db = services.GetRequiredService<AppDbContext>();
+        var passwordHasher = services.GetRequiredService<IPasswordHasher<User>>();
 
-    // Link any orphan properties to the adminUser
-    var orphanProperties = db.Properties.Where(p => p.UserId == null).ToList();
-    if (orphanProperties.Count > 0)
-    {
-        foreach (var p in orphanProperties)
+        // Create database tables if they do not exist
+        db.Database.EnsureCreated();
+
+        // Ensure a default Admin user exists
+        var adminEmail = "admin@sasrika.lk";
+        var adminUser = db.Users.FirstOrDefault(u => u.Email == adminEmail);
+        if (adminUser == null)
         {
-            p.UserId = adminUser.Id;
-            if (string.IsNullOrWhiteSpace(p.SellerName)) p.SellerName = $"{adminUser.FirstName} {adminUser.LastName}";
-            if (string.IsNullOrWhiteSpace(p.SellerPhone)) p.SellerPhone = adminUser.PhoneNumber ?? "0771234567";
+            adminUser = new User
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Sasrika",
+                LastName = "Admin",
+                Email = adminEmail,
+                PhoneNumber = "0771234567",
+                Role = "Admin",
+                CreatedAt = DateTime.UtcNow
+            };
+            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "Admin@2026");
+            db.Users.Add(adminUser);
+            db.SaveChanges();
+            logger.LogInformation("Default Admin user seeded successfully.");
         }
-        db.SaveChanges();
-    }
 
-    // Ensure PricePerPerch is strictly null for non-Land or non-ForSale properties
-    var invalidPerchListings = db.Properties
-        .Where(p => (p.ListingType != ListingType.ForSale || p.PropertyType != PropertyType.Land) && p.PricePerPerch != null)
-        .ToList();
-    if (invalidPerchListings.Count > 0)
-    {
-        foreach (var item in invalidPerchListings)
+        // Link any orphan properties to the adminUser
+        var orphanProperties = db.Properties.Where(p => p.UserId == null).ToList();
+        if (orphanProperties.Count > 0)
         {
-            item.PricePerPerch = null;
+            foreach (var p in orphanProperties)
+            {
+                p.UserId = adminUser.Id;
+                if (string.IsNullOrWhiteSpace(p.SellerName)) p.SellerName = $"{adminUser.FirstName} {adminUser.LastName}";
+                if (string.IsNullOrWhiteSpace(p.SellerPhone)) p.SellerPhone = adminUser.PhoneNumber ?? "0771234567";
+            }
+            db.SaveChanges();
         }
-        db.SaveChanges();
+
+        // Ensure PricePerPerch is strictly null for non-Land or non-ForSale properties
+        var invalidPerchListings = db.Properties
+            .Where(p => (p.ListingType != ListingType.ForSale || p.PropertyType != PropertyType.Land) && p.PricePerPerch != null)
+            .ToList();
+        if (invalidPerchListings.Count > 0)
+        {
+            foreach (var item in invalidPerchListings)
+            {
+                item.PricePerPerch = null;
+            }
+            db.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while initializing or seeding the database.");
     }
 }
 
 app.Run();
+
+// Helper method to parse PostgreSQL URI format (postgres:// or postgresql://) into standard Npgsql connection string
+static string ParsePostgreSqlConnectionString(string rawConnection)
+{
+    if (string.IsNullOrWhiteSpace(rawConnection))
+    {
+        return rawConnection;
+    }
+
+    if (rawConnection.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
+        rawConnection.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+    {
+        var uri = new Uri(rawConnection);
+        var userInfoParts = uri.UserInfo.Split(':', 2);
+        var username = userInfoParts.Length > 0 ? Uri.UnescapeDataString(userInfoParts[0]) : "";
+        var password = userInfoParts.Length > 1 ? Uri.UnescapeDataString(userInfoParts[1]) : "";
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+    }
+
+    return rawConnection;
+}

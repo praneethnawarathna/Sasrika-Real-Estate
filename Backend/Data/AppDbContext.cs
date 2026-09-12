@@ -18,15 +18,21 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Serialize List<string> ImageUrls as a JSON string column for SQLite
+        // Serialize List<string> ImageUrls as JSON string column
         var imageUrlsConverter = new ValueConverter<List<string>, string>(
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
             v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
         );
 
+        var imageUrlsComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
+            (c1, c2) => c1 != null && c2 != null ? c1.SequenceEqual(c2) : c1 == c2,
+            c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+            c => c.ToList()
+        );
+
         modelBuilder.Entity<Property>()
             .Property(p => p.ImageUrls)
-            .HasConversion(imageUrlsConverter);
+            .HasConversion(imageUrlsConverter, imageUrlsComparer);
 
         // User unique email index
         modelBuilder.Entity<User>()
