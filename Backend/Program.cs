@@ -51,14 +51,11 @@ builder.Services.AddAuthorization();
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(
-                  "https://sasrika-real-estate-bh9k.vercel.app",
-                  "http://localhost:5173",
-                  "http://localhost:5174")
-              .AllowAnyHeader()
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyMethod()
+              .AllowAnyHeader()
               .AllowCredentials();
     });
 });
@@ -83,8 +80,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");
 app.UseStaticFiles();
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
