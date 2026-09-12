@@ -64,11 +64,11 @@ export default function Footer() {
             <div className="space-y-2 text-xs text-gray-500">
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-emerald-500 flex-shrink-0" />
-                <span>Colombo &amp; Kandy, Sri Lanka</span>
+                <span> 117 4/B Lewella, Kandy, Sri Lanka</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={14} className="text-emerald-500 flex-shrink-0" />
-                <span>+94 77 000 0000 / +94 11 200 0000</span>
+                <span>+94 77 253 9492 / +94 78 866 8851</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail size={14} className="text-emerald-500 flex-shrink-0" />

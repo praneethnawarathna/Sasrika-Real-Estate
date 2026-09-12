@@ -3,17 +3,20 @@ import HomePage from './pages/HomePage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/property/:id" element={<PropertyDetailsPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-      </Routes>
-    </BrowserRouter>
+    <FavoritesProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/property/:id" element={<PropertyDetailsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Routes>
+      </BrowserRouter>
+    </FavoritesProvider>
   );
 }
 

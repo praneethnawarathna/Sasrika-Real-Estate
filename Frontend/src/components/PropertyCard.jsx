@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Heart, BedDouble, Bath, Ruler, Sparkles, Edit3, Trash2 } from 'lucide-react';
 import WhatsAppIcon from './WhatsAppIcon';
 import { getWhatsAppUrl } from '../utils/phoneUtils';
+import { useFavorites } from '../context/FavoritesContext';
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -28,6 +29,9 @@ export default function PropertyCard({ property: p, onEdit, onDelete }) {
   const isLand = p.propertyType === 0 || p.propertyType === 'Land';
   const landSize = p.landSizePerches ?? p.landSize ?? 0;
   const propType = PROPERTY_TYPES[typeof p.propertyType === 'number' ? p.propertyType : (p.propertyType === 'Land' ? 0 : p.propertyType === 'House' ? 1 : 2)] || PROPERTY_TYPES[0];
+
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const saved = isFavorite(p.id);
 
   const whatsAppUrl = getWhatsAppUrl(p.sellerPhone, p.title, p.price, p.isNegotiable);
 
@@ -97,13 +101,24 @@ export default function PropertyCard({ property: p, onEdit, onDelete }) {
             )}
             <button
               type="button"
+              title={saved ? 'Remove from saved' : 'Save property'}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                toggleFavorite(p.id);
               }}
-              className="w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-rose-500 transition-colors"
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${
+                saved
+                  ? 'bg-rose-50 text-rose-500 scale-110'
+                  : 'bg-white/90 hover:bg-white text-gray-400 hover:text-rose-500'
+              }`}
             >
-              <Heart size={15} />
+              <Heart
+                size={15}
+                className={`transition-colors duration-200 ${
+                  saved ? 'fill-rose-500 text-rose-500' : ''
+                }`}
+              />
             </button>
           </div>
         </div>
