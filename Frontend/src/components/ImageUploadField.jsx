@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { UploadCloud, X, Star, Link as LinkIcon, AlertCircle, Plus, Loader2 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/upload/images';
+const API_BASE = API_ENDPOINTS.upload;
 
 export default function ImageUploadField({ images = [], onChange }) {
   const [isDragging, setIsDragging] = useState(false);

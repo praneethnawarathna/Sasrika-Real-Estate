@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { X, User, Edit3, Check } from 'lucide-react';
 import ImageUploadField from './ImageUploadField';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 export default function EditPropertyModal({
   property,

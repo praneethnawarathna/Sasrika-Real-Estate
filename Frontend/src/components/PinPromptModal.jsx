@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { X, Lock, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 export default function PinPromptModal({
   propertyId,

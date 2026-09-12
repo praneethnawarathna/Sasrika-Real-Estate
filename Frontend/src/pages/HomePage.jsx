@@ -6,8 +6,9 @@ import PropertyCard from '../components/PropertyCard';
 import AddPropertyModal from '../components/AddPropertyModal';
 import SearchFilterBar from '../components/SearchFilterBar';
 import Footer from '../components/Footer';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();

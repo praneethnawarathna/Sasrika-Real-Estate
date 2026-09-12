@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Mail, Lock, User, Phone, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '8700404392-ce6khm9cklapb7ej03mr73ojnb8bfsiu.apps.googleusercontent.com';
 
@@ -143,7 +144,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5143/api/auth/forgot-password', {
+      const res = await fetch(`${API_ENDPOINTS.auth}/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail }),

@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { formatDisplayPhone, getWhatsAppUrl } from '../utils/phoneUtils';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_ADMIN = 'http://localhost:5143/api/admin';
+const API_ADMIN = API_ENDPOINTS.admin;
 
 const PROPERTY_TYPE_LABELS = ['Land', 'House', 'Commercial'];
 const LISTING_TYPE_LABELS = ['For Sale', 'For Rent'];

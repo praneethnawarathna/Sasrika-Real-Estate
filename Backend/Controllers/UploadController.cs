@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RealEstate.Api.Services;
 
 namespace RealEstate.Api.Controllers;
 
@@ -6,15 +7,17 @@ namespace RealEstate.Api.Controllers;
 [Route("api/[controller]")]
 public class UploadController : ControllerBase
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IPhotoService _photoService;
+    private readonly ILogger<UploadController> _logger;
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"
     };
 
-    public UploadController(IWebHostEnvironment environment)
+    public UploadController(IPhotoService photoService, ILogger<UploadController> logger)
     {
-        _environment = environment;
+        _photoService = photoService;
+        _logger = logger;
     }
 
     // POST: /api/upload/images
@@ -26,20 +29,7 @@ public class UploadController : ControllerBase
             return BadRequest(new { message = "No image files provided." });
         }
 
-        var webRoot = _environment.WebRootPath;
-        if (string.IsNullOrEmpty(webRoot))
-        {
-            webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        }
-
-        var uploadsFolder = Path.Combine(webRoot, "uploads");
-        if (!Directory.Exists(uploadsFolder))
-        {
-            Directory.CreateDirectory(uploadsFolder);
-        }
-
-        var uploadedUrls = new List<string>();
-
+        // Validate extensions & size before uploading
         foreach (var file in files)
         {
             if (file.Length == 0) continue;
@@ -47,7 +37,7 @@ public class UploadController : ControllerBase
             var ext = Path.GetExtension(file.FileName);
             if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
             {
-                return BadRequest(new { message = $"File type '{ext}' is not supported. Please upload JPG, PNG, or WEBP images." });
+                return BadRequest(new { message = $"File type '{ext}' is not supported. Please upload JPG, PNG, WEBP, or AVIF images." });
             }
 
             // Max 15 MB per file
@@ -55,19 +45,19 @@ public class UploadController : ControllerBase
             {
                 return BadRequest(new { message = $"File '{file.FileName}' exceeds the 15 MB size limit." });
             }
-
-            var uniqueFileName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
-            var destinationPath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(destinationPath, FileMode.Create))
-            {
-                await file.CopyToAsync(fileStream);
-            }
-
-            var fileUrl = $"{Request.Scheme}://{Request.Host}/uploads/{uniqueFileName}";
-            uploadedUrls.Add(fileUrl);
         }
 
-        return Ok(new { urls = uploadedUrls });
+        try
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var uploadedUrls = await _photoService.UploadPhotosAsync(files, baseUrl);
+            return Ok(new { urls = uploadedUrls });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload images");
+            return StatusCode(500, new { message = "Image upload failed. " + ex.Message });
+        }
     }
 }
+
