@@ -13,8 +13,9 @@ import WhatsAppIcon from '../components/WhatsAppIcon';
 import { getWhatsAppUrl, formatDisplayPhone } from '../utils/phoneUtils';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();

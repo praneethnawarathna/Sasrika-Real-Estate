@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 const AuthContext = createContext();
 
-const API_BASE = 'http://localhost:5143/api/auth';
+const API_BASE = API_ENDPOINTS.auth;
 const TOKEN_KEY = 'sasrika_token';
 const USER_KEY = 'sasrika_user';
 

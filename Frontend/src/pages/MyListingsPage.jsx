@@ -10,8 +10,9 @@ import Footer from '../components/Footer';
 import AddPropertyModal from '../components/AddPropertyModal';
 import EditPropertyModal from '../components/EditPropertyModal';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 const PROPERTY_TYPE_LABELS = ['Land', 'House', 'Commercial'];
 

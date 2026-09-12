@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Heart, Trash2, MapPin, ExternalLink, ArrowRight, Sparkles } from 'lucide-react';
 import { useFavorites } from '../context/FavoritesContext';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 const PROPERTY_TYPE_LABELS = ['Land', 'House', 'Commercial'];
 const LISTING_TYPE_LABELS = ['For Sale', 'For Rent'];

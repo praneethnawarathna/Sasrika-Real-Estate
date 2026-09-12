@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { X, Upload, User, Phone, CheckCircle2, Clock, ShieldCheck, Building2 } from 'lucide-react';
 import ImageUploadField from './ImageUploadField';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = API_ENDPOINTS.properties;
 
 export default function AddPropertyModal({ onClose, onCreated }) {
   const { user, authFetch } = useAuth();
