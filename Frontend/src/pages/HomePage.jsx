@@ -7,7 +7,7 @@ import AddPropertyModal from '../components/AddPropertyModal';
 import SearchFilterBar from '../components/SearchFilterBar';
 import Footer from '../components/Footer';
 
-const API_BASE = 'http://localhost:5143/api/properties';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5143/api';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
