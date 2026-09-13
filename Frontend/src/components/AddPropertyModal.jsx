@@ -364,7 +364,6 @@ export default function AddPropertyModal({ onClose, onCreated }) {
 
           {/* Image Upload Component */}
           <div>
-            <label className={labelCls}>Photos (Max 10)</label>
             <ImageUploadField
               imageUrls={form.imageUrls}
               onChange={(urls) => setForm((prev) => ({ ...prev, imageUrls: urls }))}
