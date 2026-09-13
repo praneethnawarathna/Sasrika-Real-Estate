@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Clock, LayoutGrid, AlertTriangle } from 'lucide-react';
+import { Clock, LayoutGrid } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PropertyCard from '../components/PropertyCard';
 import AddPropertyModal from '../components/AddPropertyModal';
+import AuthModal from '../components/AuthModal';
 import SearchFilterBar from '../components/SearchFilterBar';
 import Footer from '../components/Footer';
 import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = API_ENDPOINTS.properties;
 
@@ -21,6 +23,17 @@ export default function HomePage() {
     urlFilter === 'sale' || urlFilter === 'rent' ? urlFilter : 'all'
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+
+  // Guard: only open AddPropertyModal if user is authenticated
+  const handleAddPropertyClick = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+    } else {
+      setIsModalOpen(true);
+    }
+  };
 
   // Sync activeFilter with URL params if changed externally
   useEffect(() => {
@@ -209,7 +222,7 @@ export default function HomePage() {
                   Reset Filters
                 </button>
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={handleAddPropertyClick}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
                 >
                   + Add Property
@@ -282,6 +295,12 @@ export default function HomePage() {
           }}
         />
       )}
+
+      {/* Auth Modal — shown when unauthenticated user tries to add property */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }

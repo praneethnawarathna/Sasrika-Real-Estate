@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, Heart, User, Menu, X, LogOut, Building2, ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useFavorites } from '../context/FavoritesContext';
@@ -22,6 +22,24 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
   const isMyListings = location.pathname === '/my-listings';
 
   const dropdownRef = useRef(null);
+
+  // Listen for ProtectedRoute's global event to open the auth modal
+  const openAuthModal = useCallback(() => setAuthModalOpen(true), []);
+  useEffect(() => {
+    window.addEventListener('sasrika:open-auth-modal', openAuthModal);
+    return () => window.removeEventListener('sasrika:open-auth-modal', openAuthModal);
+  }, [openAuthModal]);
+
+  // After login, redirect to the page the user originally wanted
+  useEffect(() => {
+    if (isAuthenticated) {
+      const returnTo = sessionStorage.getItem('sasrika_return_to');
+      if (returnTo) {
+        sessionStorage.removeItem('sasrika_return_to');
+        navigate(returnTo, { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate]);
 
   // Close user dropdown on outside click
   useEffect(() => {

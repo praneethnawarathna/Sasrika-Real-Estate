@@ -4,6 +4,7 @@ import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
 import MyListingsPage from './pages/MyListingsPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { AuthProvider } from './context/AuthContext';
 
@@ -16,8 +17,26 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/property/:id" element={<PropertyDetailsPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/my-listings" element={<MyListingsPage />} />
+
+            {/* Admin — protected; only accessible to authenticated users */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* My Listings — requires authentication */}
+            <Route
+              path="/my-listings"
+              element={
+                <ProtectedRoute>
+                  <MyListingsPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </FavoritesProvider>
