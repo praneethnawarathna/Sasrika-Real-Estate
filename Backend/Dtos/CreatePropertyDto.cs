@@ -19,6 +19,7 @@ public record CreatePropertyDto(
 
     List<string>? ImageUrls,
     string? SellerName,
-    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")]
-    string? SellerPhone
+    [Required(ErrorMessage = "Seller phone is required")]
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567).")]
+    string SellerPhone
 );

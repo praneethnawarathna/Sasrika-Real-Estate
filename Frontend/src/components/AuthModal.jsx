@@ -468,7 +468,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
 
                 <button
                   type="submit"
-                  disabled={loading || registerForm.password.length < 8}
+                  disabled={loading || registerForm.password.length < 8 || Boolean(phoneError)}
                   className="w-full mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? (

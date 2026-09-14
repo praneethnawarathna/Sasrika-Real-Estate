@@ -72,16 +72,16 @@ export default function EditPropertyModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
     const cleanPhone = form.sellerPhone.trim();
     if (!cleanPhone || !/^0\d{9}$/.test(cleanPhone)) {
       setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
       setError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setError('');
 
     try {
       const selectedType = Number(form.propertyType);
@@ -397,7 +397,7 @@ export default function EditPropertyModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !/^0\d{9}$/.test(form.sellerPhone.trim())}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold rounded-xl py-2.5 text-sm shadow-sm transition-colors"
             >
               {loading ? 'Saving...' : 'Save Changes'}

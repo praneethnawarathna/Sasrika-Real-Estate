@@ -27,7 +27,8 @@ public class Property
 
     public string SellerName { get; set; } = string.Empty;
 
-    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")]
+    [Required(ErrorMessage = "Seller phone is required")]
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567).")]
     public string SellerPhone { get; set; } = string.Empty;
 
     public int ViewCount { get; set; } = 0;
