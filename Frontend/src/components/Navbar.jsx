@@ -93,12 +93,12 @@ export default function Navbar({ onAddClick, activeFilter, onFilterChange }) {
             <Link to="/" className="flex items-center gap-3 flex-shrink-0">
               <img
                 src="/logo.png"
-                alt="Sasrika Real Estate"
+                alt="Sashrika Real Estate"
                 className="h-11 w-auto object-contain"
               />
               <div className="hidden sm:block">
                 <span className="font-extrabold text-xl text-gray-900 tracking-tight leading-none">
-                  Sasrika<span className="text-emerald-600"></span>
+                  Sashrika<span className="text-emerald-600"></span>
                 </span>
                 <p className="text-[10px] text-emerald-600 font-semibold tracking-widest uppercase leading-none mt-0.5">
                   Real Estate

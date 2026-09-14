@@ -35,6 +35,16 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+        {
+            return BadRequest(new { message = "Password must be at least 8 characters long." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && !System.Text.RegularExpressions.Regex.IsMatch(dto.PhoneNumber.Trim(), @"^0\d{9}$"))
+        {
+            return BadRequest(new { message = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)" });
+        }
+
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
 
         var exists = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
@@ -186,6 +196,11 @@ public class AuthController : ControllerBase
     [HttpPut("profile")]
     public async Task<ActionResult<UserSummaryDto>> UpdateProfile([FromBody] UpdateProfileDto dto)
     {
+        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && !System.Text.RegularExpressions.Regex.IsMatch(dto.PhoneNumber.Trim(), @"^0\d{9}$"))
+        {
+            return BadRequest(new { message = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)" });
+        }
+
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdStr, out var userId))
         {

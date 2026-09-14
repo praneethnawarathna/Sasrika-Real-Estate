@@ -26,6 +26,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const googleBtnRef = useRef(null);
 
@@ -34,6 +36,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     if (isOpen) {
       setView(initialView);
       setError('');
+      setPhoneError('');
+      setPasswordError('');
       setForgotSuccess(false);
       document.body.style.overflow = 'hidden';
     } else {
@@ -109,15 +113,26 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPhoneError('');
+    setPasswordError('');
 
-    if (registerForm.password !== registerForm.confirmPassword) {
-      setError('Passwords do not match.');
+    const cleanPhone = registerForm.phoneNumber.trim();
+    if (cleanPhone && !/^0\d{9}$/.test(cleanPhone)) {
+      setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+      setError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
       setLoading(false);
       return;
     }
 
-    if (registerForm.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (registerForm.password.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      setError('Password must be at least 8 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setError('Passwords do not match.');
       setLoading(false);
       return;
     }
@@ -128,7 +143,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
         lastName: registerForm.lastName,
         email: registerForm.email,
         password: registerForm.password,
-        phoneNumber: registerForm.phoneNumber,
+        phoneNumber: cleanPhone || null,
       });
       onClose();
     } catch (err) {
@@ -181,9 +196,9 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
         {/* Header with Close */}
         <div className="px-6 pt-6 pb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Sasrika" className="h-8 w-auto object-contain" />
+            <img src="/logo.png" alt="Sashrika" className="h-8 w-auto object-contain" />
             <span className="font-extrabold text-lg text-gray-900 tracking-tight">
-              Sasrika<span className="text-emerald-600"> Real Estate</span>
+              Sashrika<span className="text-emerald-600"> Real Estate</span>
             </span>
           </div>
           <button
@@ -318,7 +333,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
               <div className="mb-4">
                 <h3 className="text-xl font-extrabold text-gray-900">Create Free Account</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Join Sasrika to post, edit, and track your property ads.
+                  Join Sashrika to post, edit, and track your property ads.
                 </p>
               </div>
 
@@ -380,11 +395,31 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                   </label>
                   <input
                     type="tel"
-                    placeholder="077 123 4567"
+                    maxLength={10}
+                    placeholder="0771234567"
                     value={registerForm.phoneNumber}
-                    onChange={(e) => setRegisterForm({ ...registerForm, phoneNumber: e.target.value })}
-                    className={inputCls}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setRegisterForm((prev) => ({ ...prev, phoneNumber: digits }));
+                      if (digits.length > 0 && !/^0\d{9}$/.test(digits)) {
+                        setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+                      } else {
+                        setPhoneError('');
+                      }
+                    }}
+                    onBlur={() => {
+                      const cleanPhone = registerForm.phoneNumber.trim();
+                      if (cleanPhone && !/^0\d{9}$/.test(cleanPhone)) {
+                        setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+                      } else {
+                        setPhoneError('');
+                      }
+                    }}
+                    className={`${inputCls} ${phoneError ? 'border-red-400 bg-red-50/30' : ''}`}
                   />
+                  {phoneError && (
+                    <p className="text-xs text-red-600 mt-1 font-medium">{phoneError}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
@@ -393,11 +428,30 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
-                      placeholder="At least 6 chars"
+                      minLength={8}
+                      placeholder="At least 8 chars"
                       value={registerForm.password}
-                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                      className={inputCls}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRegisterForm((prev) => ({ ...prev, password: val }));
+                        if (val.length > 0 && val.length < 8) {
+                          setPasswordError('Password must be at least 8 characters long');
+                        } else {
+                          setPasswordError('');
+                        }
+                      }}
+                      onBlur={() => {
+                        if (registerForm.password.length > 0 && registerForm.password.length < 8) {
+                          setPasswordError('Password must be at least 8 characters long');
+                        } else {
+                          setPasswordError('');
+                        }
+                      }}
+                      className={`${inputCls} ${passwordError ? 'border-red-400 bg-red-50/30' : ''}`}
                     />
+                    {passwordError && (
+                      <p className="text-xs text-red-600 mt-1 font-medium">{passwordError}</p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Confirm Password</label>
@@ -406,7 +460,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                       required
                       placeholder="Repeat password"
                       value={registerForm.confirmPassword}
-                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                      onChange={(e) => setRegisterForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
                       className={inputCls}
                     />
                   </div>
@@ -414,7 +468,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || registerForm.password.length < 8}
                   className="w-full mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? (

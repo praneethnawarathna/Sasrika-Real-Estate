@@ -28,7 +28,7 @@ export function getWhatsAppUrl(phone, title, price, isNegotiable) {
     ? `LKR ${Number(price).toLocaleString()}${isNegotiable ? ' (Negotiable)' : ''}`
     : 'Negotiable';
 
-  const message = `Hi, I'm interested in your listing: "${title || 'Property'}" (Price: ${priceText}) listed on Sasrika.`;
+  const message = `Hi, I'm interested in your listing: "${title || 'Property'}" (Price: ${priceText}) listed on Sashrika.`;
   return `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
 }
 

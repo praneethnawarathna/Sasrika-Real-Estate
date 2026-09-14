@@ -12,11 +12,11 @@ export default function Footer() {
             <Link to="/" className="flex items-center gap-2.5">
               <img
                 src="/logo.png"
-                alt="Sasrika Real Estate"
+                alt="Sashrika Real Estate"
                 className="h-10 w-auto object-contain"
               />
               <span className="font-extrabold text-xl text-gray-900 tracking-tight leading-none">
-                Sasrika<span className="text-emerald-600"></span>
+                Sashrika<span className="text-emerald-600"></span>
               </span>
             </Link>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
@@ -81,7 +81,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
-          <p>© {new Date().getFullYear()} Sasrika Real Estate. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Sashrika Real Estate. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <Link to="/about" className="hover:text-gray-600 transition-colors">
               About Us

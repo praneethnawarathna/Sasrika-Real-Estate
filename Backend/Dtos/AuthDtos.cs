@@ -6,8 +6,8 @@ public record RegisterDto(
     [Required, StringLength(50)] string FirstName,
     [Required, StringLength(50)] string LastName,
     [Required, EmailAddress] string Email,
-    [Required, MinLength(6, ErrorMessage = "Password must be at least 6 characters.")] string Password,
-    string? PhoneNumber
+    [Required, MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")] string Password,
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")] string? PhoneNumber
 );
 
 public record LoginDto(
@@ -26,7 +26,7 @@ public record ForgotPasswordDto(
 public record UpdateProfileDto(
     [Required, StringLength(50)] string FirstName,
     [Required, StringLength(50)] string LastName,
-    string? PhoneNumber,
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")] string? PhoneNumber,
     string? ProfilePictureUrl
 );
 

@@ -201,6 +201,11 @@ public class PropertiesController : ControllerBase
             ? dto.SellerPhone.Trim()
             : user.PhoneNumber ?? string.Empty;
 
+        if (string.IsNullOrWhiteSpace(sellerPhone) || !System.Text.RegularExpressions.Regex.IsMatch(sellerPhone, @"^0\d{9}$"))
+        {
+            return BadRequest(new { message = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)" });
+        }
+
         var property = new Property
         {
             Id = Guid.NewGuid(),
@@ -281,7 +286,12 @@ public class PropertiesController : ControllerBase
         }
         if (!string.IsNullOrWhiteSpace(dto.SellerPhone))
         {
-            property.SellerPhone = dto.SellerPhone.Trim();
+            var cleanPhone = dto.SellerPhone.Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(cleanPhone, @"^0\d{9}$"))
+            {
+                return BadRequest(new { message = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)" });
+            }
+            property.SellerPhone = cleanPhone;
         }
 
         await _context.SaveChangesAsync();

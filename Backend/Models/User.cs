@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace RealEstate.Api.Models;
@@ -12,6 +13,7 @@ public class User
     [JsonIgnore]
     public string? PasswordHash { get; set; }
 
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")]
     public string? PhoneNumber { get; set; }
     public string? ProfilePictureUrl { get; set; }
     public string Role { get; set; } = "User"; // "User" | "Admin"

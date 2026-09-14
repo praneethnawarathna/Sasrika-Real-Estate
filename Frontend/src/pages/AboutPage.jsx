@@ -23,7 +23,7 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-4 backdrop-blur-sm">
               <Sparkles size={13} className="text-emerald-400" />
-              About Sasrika Real Estate
+              About Sashrika Real Estate
             </span>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight max-w-4xl mx-auto">
               Empowering Transparent &amp; Direct Real Estate Across <span className="text-emerald-400">Sri Lanka</span>
@@ -97,10 +97,10 @@ export default function AboutPage() {
                 Rebuilding Trust in Sri Lanka's Real Estate Marketplace
               </h2>
               <p className="text-gray-600 text-sm leading-relaxed">
-                In Sri Lanka, finding reliable land or houses has historically been cluttered with unverified listings, phantom brokers, and outdated prices. Sasrika was established to transform that experience into a clean, modern digital portal.
+                In Sri Lanka, finding reliable land or houses has historically been cluttered with unverified listings, phantom brokers, and outdated prices. Sashrika was established to transform that experience into a clean, modern digital portal.
               </p>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Whether you are seeking agricultural land in Kurunegala, residential plots in Gampaha, luxury apartments in Colombo, or commercial investments in Kandy, Sasrika delivers clear specs, genuine images, and verifiable details.
+                Whether you are seeking agricultural land in Kurunegala, residential plots in Gampaha, luxury apartments in Colombo, or commercial investments in Kandy, Sashrika delivers clear specs, genuine images, and verifiable details.
               </p>
 
               <div className="pt-2 space-y-3">
@@ -118,20 +118,20 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Sasrika Guarantee Card */}
+            {/* Sashrika Guarantee Card */}
             <div className="bg-gradient-to-br from-emerald-50 to-teal-100/50 rounded-3xl p-8 border border-emerald-100 shadow-sm space-y-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
                   <ShieldCheck size={26} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-emerald-950">The Sasrika Buyer Guarantee</h3>
+                  <h3 className="text-lg font-bold text-emerald-950">The Sashrika Buyer Guarantee</h3>
                   <p className="text-xs text-emerald-700">Integrity and accuracy in every listing</p>
                 </div>
               </div>
 
               <p className="text-xs text-emerald-900/80 leading-relaxed">
-                Every property featured on Sasrika is presented with direct ownership contact and explicit parameters — including per-perch pricing, land extent, and room counts. We empower buyers with transparent data to negotiate with absolute confidence.
+                Every property featured on Sashrika is presented with direct ownership contact and explicit parameters — including per-perch pricing, land extent, and room counts. We empower buyers with transparent data to negotiate with absolute confidence.
               </p>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3 border border-emerald-100">
@@ -174,7 +174,7 @@ export default function AboutPage() {
                 </div>
                 <h4 className="font-bold text-gray-900 text-sm">Headquarters</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Sasrika Real Estate PVT<br /> 117 4/B Lewella, Kandy,<br />Sri Lanka
+                  Sashrika Real Estate PVT<br /> 117 4/B Lewella, Kandy,<br />Sri Lanka
                 </p>
               </div>
 

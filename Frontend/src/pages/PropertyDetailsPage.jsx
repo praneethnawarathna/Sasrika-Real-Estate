@@ -351,13 +351,13 @@ export default function PropertyDetailsPage() {
               </p>
             </div>
 
-            {/* Sasrika Guarantee */}
+            {/* Sashrika Guarantee */}
             <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
                 <CheckCircle2 size={18} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-emerald-800">Sasrika Buyer Guarantee</p>
+                <p className="text-sm font-bold text-emerald-800">Sashrika Buyer Guarantee</p>
                 <p className="text-xs text-emerald-600 mt-0.5">
                   Survey plan, municipal zoning, and ownership lineage fully validated.
                 </p>
@@ -488,7 +488,7 @@ export default function PropertyDetailsPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {p.sellerName || 'Sasrika Partner'}
+                      {p.sellerName || 'Sashrika Partner'}
                     </p>
                     <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5 font-medium">
                       <CheckCircle2 size={11} /> Verified Partner

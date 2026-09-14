@@ -209,7 +209,7 @@ export default function AdminPage() {
               <Shield size={28} />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">
-              Sasrika <span className="text-emerald-400">Admin Console</span>
+              Sashrika <span className="text-emerald-400">Admin Console</span>
             </h1>
             <p className="text-xs text-gray-400 mt-1">
               Enter your Master Key to manage moderation &amp; approval workflows.
@@ -227,7 +227,7 @@ export default function AdminPage() {
                   type="password"
                   value={keyInput}
                   onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="Enter Master Key (e.g. Sasrika@Admin2026)"
+                  placeholder="Enter Master Key (e.g. Sashrika@Admin2026)"
                   autoFocus
                   className="w-full pl-10 pr-4 py-3 bg-gray-800/80 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                 />
@@ -280,9 +280,9 @@ export default function AdminPage() {
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-2">
-                  <img src="/logo.svg" alt="Sasrika" className="h-8 w-auto" />
+                  <img src="/logo.svg" alt="Sashrika" className="h-8 w-auto" />
                   <span className="font-black text-lg text-white">
-                    Sasrika<span className="text-emerald-400">.</span>
+                    Sashrika<span className="text-emerald-400">.</span>
                   </span>
                 </Link>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">

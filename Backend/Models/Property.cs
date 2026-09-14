@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace RealEstate.Api.Models;
@@ -25,6 +26,8 @@ public class Property
     public List<string> ImageUrls { get; set; } = new();
 
     public string SellerName { get; set; } = string.Empty;
+
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)")]
     public string SellerPhone { get; set; } = string.Empty;
 
     public int ViewCount { get; set; } = 0;

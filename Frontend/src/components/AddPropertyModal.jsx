@@ -29,6 +29,7 @@ export default function AddPropertyModal({ onClose, onCreated }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [submittedProperty, setSubmittedProperty] = useState(null);
 
   // Prevent background scroll
@@ -47,10 +48,37 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     }));
   };
 
+  const handlePhoneChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setForm((prev) => ({ ...prev, sellerPhone: raw }));
+    if (raw.length > 0 && !/^0\d{9}$/.test(raw)) {
+      setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+    } else {
+      setPhoneError('');
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    const cleanPhone = form.sellerPhone.trim();
+    if (!cleanPhone || !/^0\d{9}$/.test(cleanPhone)) {
+      setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+    } else {
+      setPhoneError('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    const cleanPhone = form.sellerPhone.trim();
+    if (!cleanPhone || !/^0\d{9}$/.test(cleanPhone)) {
+      setPhoneError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+      setError('Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)');
+      setLoading(false);
+      return;
+    }
 
     try {
       const selectedType = Number(form.propertyType);
@@ -390,11 +418,16 @@ export default function AddPropertyModal({ onClose, onCreated }) {
                 type="tel"
                 name="sellerPhone"
                 required
+                maxLength={10}
                 value={form.sellerPhone}
-                onChange={handleChange}
-                className={inputCls}
-                placeholder="e.g. 077 123 4567"
+                onChange={handlePhoneChange}
+                onBlur={handlePhoneBlur}
+                className={`${inputCls} ${phoneError ? 'border-red-400 bg-red-50/30' : ''}`}
+                placeholder="0771234567"
               />
+              {phoneError && (
+                <p className="text-xs text-red-600 mt-1 font-medium">{phoneError}</p>
+              )}
             </div>
           </div>
 
