@@ -1,6 +1,6 @@
-# Sasrika Real Estate — System Documentation
+# Sashrika Real Estate — System Documentation
 
-A comprehensive, production-grade technical manual detailing the architecture, technology stack, directory structures, environment configurations, local development workflow, production deployment guides, security model, and core operational workflows for the **Sasrika Real Estate** platform.
+A comprehensive, production-grade technical manual detailing the architecture, technology stack, directory structures, environment configurations, local development workflow, production deployment guides, security model, and core operational workflows for the **Sashrika Real Estate** platform.
 
 ---
 
@@ -40,6 +40,7 @@ A comprehensive, production-grade technical manual detailing the architecture, t
 8. [Core Operational Workflows](#8-core-operational-workflows)
    - [Property Listing Lifecycle](#property-listing-lifecycle)
    - [Multi-Image Upload Pipeline](#multi-image-upload-pipeline)
+   - [Strict Sri Lankan Phone Number Validation](#strict-sri-lankan-phone-number-validation)
    - [Search, Filter & Sorting Pipeline](#search-filter--sorting-pipeline)
    - [User Inquiry & WhatsApp Contact Flow](#user-inquiry--whatsapp-contact-flow)
 
@@ -47,9 +48,9 @@ A comprehensive, production-grade technical manual detailing the architecture, t
 
 ## 1. Executive Summary & Architecture Overview
 
-Sasrika Real Estate is a modern, high-performance web platform designed to facilitate real estate listings, browsing, user interactions, and admin moderation in Sri Lanka. The application follows a decoupled, headless client-server architecture:
+Sashrika Real Estate is a modern, high-performance web platform designed to facilitate real estate listings, browsing, direct seller communication, and administrative moderation in Sri Lanka. The application follows a decoupled, headless client-server architecture:
 
-- **Single-Page Application (SPA) Frontend**: Built using React 19 and Vite, deployed globally on Vercel's Edge Network for rapid asset delivery and client-side page rendering.
+- **Single-Page Application (SPA) Frontend**: Built using React 19 and Vite, deployed on Vercel's Edge Network for rapid asset delivery and client-side page rendering.
 - **RESTful Backend API**: Built using ASP.NET Core (.NET 10), hosted on Railway, delivering secure endpoints for property management, user authentication, media uploads, and administrative moderation.
 - **Relational Persistence**: A managed PostgreSQL database provisioned on Railway storing relational models including users, properties, and moderation records.
 - **Cloud Media Storage**: Cloudinary integration ensuring optimized asset delivery (WebP/AVIF auto-format, quality compression, responsive resizing) and high availability for property photo galleries.
@@ -146,15 +147,15 @@ flowchart TD
 
 ### Database & Storage
 
-- **Database Engine**: PostgreSQL 15+ / 16 (Hosted on Railway managed infrastructure).
+- **Database Engine**: PostgreSQL 15+ / 16 (Hosted on Railway managed infrastructure or local development instance).
 - **Object Storage**: Cloudinary (Cloud-based Digital Asset Management).
-- **Local Fallback Storage**: `Backend/wwwroot/uploads` (for local environments without Cloudinary credentials configured).
+- **Local Fallback Storage**: `Backend/wwwroot/uploads` (for development environments without Cloudinary credentials).
 
 ### Cloud Hosting & Infrastructure
 
-- **Frontend Hosting**: Vercel (Global Edge Network, automatic SSL, SPA routing via `vercel.json`).
-- **Backend Hosting**: Railway (Containerized .NET 10 runtime, automatic container restart, environment secret management).
-- **Database Hosting**: Railway PostgreSQL Plugin (Internal private network communication via `postgres.railway.internal`).
+- **Frontend Hosting**: Vercel (Global Edge Network, automatic SSL, SPA routing rewrites via `vercel.json`).
+- **Backend Hosting**: Railway (Containerized .NET 10 runtime, automatic restart, environment secret management).
+- **Database Hosting**: Railway PostgreSQL (Internal private network communication via `postgres.railway.internal`).
 
 ---
 
@@ -188,8 +189,8 @@ Sasrika-Real-Estate/
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
-│   ├── .env
-│   ├── .env.production
+│   ├── .env.example
+│   ├── .gitignore
 │   ├── package.json
 │   ├── tailwind.config.js
 │   ├── vercel.json
@@ -205,12 +206,12 @@ Sasrika-Real-Estate/
 Frontend/src/
 ├── assets/                       # Static branding images, icons, and illustrations
 ├── components/                   # Modular, reusable UI components
-│   ├── AddPropertyModal.jsx      # Modal form for submitting new properties with multi-image upload
-│   ├── AuthModal.jsx             # Authentication modal (Email/Password & Google Sign-In)
-│   ├── EditPropertyModal.jsx     # Modal for updating existing property listings
+│   ├── AddPropertyModal.jsx      # Modal form for submitting new properties with multi-image upload & phone validation
+│   ├── AuthModal.jsx             # Authentication modal (Email/Password & Google Sign-In, 8-char min password)
+│   ├── EditPropertyModal.jsx     # Modal for updating existing property listings with strict phone validation
 │   ├── Footer.jsx                # Global site footer with links and company info
 │   ├── ImageUploadField.jsx      # Multi-image drag-and-drop & batch file upload component (up to 10 images)
-│   ├── Navbar.jsx                # Responsive header with search trigger, navigation links, and auth controls
+│   ├── Navbar.jsx                # Responsive header with navigation links, branding, and auth controls
 │   ├── PinPromptModal.jsx        # Admin secret key prompt dialog
 │   ├── PropertyCard.jsx          # Property preview card with image carousel, pricing, and favorite toggle
 │   ├── ProtectedRoute.jsx        # Route guard verifying user authentication before rendering child routes
@@ -228,10 +229,11 @@ Frontend/src/
 │   ├── HomePage.jsx              # Landing page featuring hero search, filter bar, and property grid
 │   ├── MyListingsPage.jsx        # User-specific dashboard for managing self-submitted properties
 │   └── PropertyDetailsPage.jsx   # Detailed property view with image gallery, specs, seller info, and contact CTAs
-├── utils/                        # Formatting helpers (currency formatters, date formatters, telephone helpers)
+├── utils/
+│   └── phoneUtils.js             # WhatsApp URL builders, Sri Lankan phone formatters
 ├── App.css                       # Application-specific global styles and animations
 ├── App.jsx                       # Root routing configuration and modal container
-├── index.css                     # Tailwind CSS direct directives and base styles
+├── index.css                     # Tailwind CSS directives and base styles
 └── main.jsx                      # React application entry point (mounts to #root)
 ```
 
@@ -239,25 +241,25 @@ Frontend/src/
 
 1. **`src/config/api.js`**:
    - Centralizes the Backend API configuration.
-   - Reads `import.meta.env.VITE_API_BASE_URL` with a fallback to `http://localhost:5143/api`.
+   - Reads `import.meta.env.VITE_API_BASE_URL` with fallback to `http://localhost:5143/api`.
    - Exposes standardized endpoints for `properties`, `auth`, `admin`, and `upload`.
 
 2. **`src/context/AuthContext.jsx`**:
    - Manages user login state, JWT storage (`sasrika_token`), and user profile (`sasrika_user`) in `localStorage`.
    - Exposes authentication methods: `login()`, `register()`, `loginWithGoogle()`, and `logout()`.
-   - Provides `authFetch()`: a wrapper around the native Fetch API that automatically attaches the `Authorization: Bearer <token>` header to requests and triggers an automatic logout if a 401 Unauthorized response is encountered.
+   - Provides `authFetch()`: a wrapper around the native Fetch API that automatically attaches the `Authorization: Bearer <token>` header to requests and triggers an automatic logout upon receiving 401 Unauthorized.
 
 3. **`src/components/ProtectedRoute.jsx`**:
    - Prevents unauthenticated users from accessing protected pages (e.g., `/admin`, `/my-listings`).
-   - If the user is unauthenticated, preserves the target URL in `sessionStorage` (`sasrika_redirect_after_login`), dispatches a custom browser event (`sasrika:open-auth-modal`) to prompt the user to sign in, and redirects to `/`.
+   - Preserves requested return URLs in `sessionStorage` (`sasrika_return_to`) and dispatches `sasrika:open-auth-modal` event to open the sign-in modal.
 
 4. **`src/components/ImageUploadField.jsx`**:
    - Multi-file image upload handler supporting up to 10 photos simultaneously.
-   - Handles Drag & Drop, client-side validation (formats: `.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`; max 15 MB per file), displays upload progress, and renders a thumbnail preview grid with per-image deletion capabilities.
+   - Handles Drag & Drop, client-side validation (formats: `.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`; max 15 MB per file), and displays a thumbnail preview grid with per-image deletion capabilities.
 
 5. **`src/pages/AdminPage.jsx`**:
    - Two-tier security dashboard: requires standard authentication via `ProtectedRoute` and administrative verification via the `X-Admin-Key` header against `POST /api/admin/verify`.
-   - Provides administrative controls: approve pending listings, reject listings, delete listings, view platform metrics (total listings, pending, approved, rejected).
+   - Provides administrative controls: approve pending listings, reject listings, delete listings, and monitor platform metrics.
 
 ---
 
@@ -272,7 +274,12 @@ Backend/
 │   └── UploadController.cs       # Multi-image upload endpoint (Cloudinary / local fallback)
 ├── Data/
 │   └── AppDbContext.cs           # EF Core Database Context, model mappings, value converters
-├── Dtos/                         # Data Transfer Objects for API request and response validation
+├── Dtos/
+│   ├── AuthDtos.cs               # RegisterDto (min 8 char password, phone regex), LoginDto, etc.
+│   ├── CreatePropertyDto.cs      # Creation payload with Required + Regex SellerPhone validation
+│   ├── UpdatePropertyDto.cs      # Update payload with Required + Regex SellerPhone validation
+│   ├── PropertyQueryParameters.cs# Filter and search parameter bindings
+│   └── RejectPropertyDto.cs      # Rejection reason payload
 ├── Models/
 │   ├── Enum.cs                   # Enumerations: PropertyType, ListingType, ModerationStatus
 │   ├── Property.cs               # Property entity definition with validation attributes
@@ -282,44 +289,17 @@ Backend/
 ├── Services/
 │   ├── CloudinarySettings.cs     # Strongly-typed configuration options for Cloudinary credentials
 │   ├── IPhotoService.cs          # Interface contract for photo upload services
-│   ├── PhotoService.cs           # Implementation of Cloudinary image upload with optimization transformations
+│   ├── PhotoService.cs           # Cloudinary image upload with optimization transformations
 │   ├── IPropertyService.cs       # Interface contract for property business logic
 │   └── PropertyService.cs        # Property domain service implementation
 ├── wwwroot/
 │   └── uploads/                  # Local directory for media storage fallback
-├── appsettings.json              # Base application configuration
-├── appsettings.Development.json  # Local development overrides
-├── appsettings.Production.json   # Production logging and configuration overrides
+├── appsettings.json              # Base application configuration (sanitized for public repositories)
+├── appsettings.Development.json  # Local development overrides and connection strings
+├── appsettings.Production.json   # Production logging configuration
 ├── Program.cs                    # Application entry point, dependency injection, middleware pipeline
 └── RealEstate.Api.csproj         # Project manifest, package references, and target framework (.NET 10)
 ```
-
-#### Backend Modules & Responsibilities
-
-1. **`Program.cs`**:
-   - Configures PostgreSQL connection parsing: translates standard Heroku/Railway URI formats (`postgresql://user:pass@host:port/db`) into Npgsql connection strings with `SSL Mode=Prefer;Trust Server Certificate=true`.
-   - Registers services: `AppDbContext`, `IPasswordHasher<User>`, `IPhotoService`, and `CloudinarySettings`.
-   - Configures JWT Bearer authentication with issuer, audience, and symmetric key validation.
-   - Configures permissive CORS enabling smooth communication between production Vercel domains and the Railway backend.
-   - Executes database bootstrapping on startup via `db.Database.EnsureCreated()`, auto-seeding the initial Administrator account (`admin@sasrika.lk`) and reconciling orphan records.
-
-2. **`Data/AppDbContext.cs`**:
-   - Manages relational mapping for `Users` and `Properties`.
-   - Implements an EF Core `ValueConverter` to serialize `List<string>` property image URLs into a single JSON column in PostgreSQL, ensuring database portability.
-
-3. **`Controllers/AuthController.cs`**:
-   - `POST /api/auth/register`: Hashes passwords using ASP.NET Core's cryptographic `PasswordHasher<User>` and issues JWTs.
-   - `POST /api/auth/login`: Validates credentials against stored password hashes.
-   - `POST /api/auth/google`: Accepts Google ID tokens, validates signatures cryptographically against Google public keys via `GoogleJsonWebSignature.ValidateAsync`, and provisions or links user accounts seamlessly.
-
-4. **`Controllers/PropertiesController.cs`**:
-   - `GET /api/properties`: Retrieves approved listings with advanced filtering (district, city, price range, listing type, property type, search term, sorting).
-   - `POST /api/properties`: Authenticated endpoint to post new properties; automatically assigns `Pending` moderation status.
-   - `PUT /api/properties/{id}` & `DELETE /api/properties/{id}`: Validates ownership or administrator privileges before allowing modifications.
-
-5. **`Controllers/UploadController.cs` & `Services/PhotoService.cs`**:
-   - `POST /api/upload/images`: Accepts up to 10 image files (`IFormFile`) per request with a 150 MB total payload limit.
-   - Passes files to `PhotoService`, which uploads them to the `sasrika/properties` Cloudinary folder, applying automatic WebP format conversion (`f_auto`) and quality compression (`q_auto`). Returns an array of secure URLs (`https://res.cloudinary.com/...`).
 
 ---
 
@@ -327,33 +307,33 @@ Backend/
 
 ### Frontend Environment Variables
 
-Configure these variables in `Frontend/.env` (Local) and in the **Vercel Project Settings > Environment Variables** (Production).
+Configure these variables in `Frontend/.env` (Local) and in the **Vercel Project Settings > Environment Variables** (Production). Refer to `Frontend/.env.example` for the template.
 
-| Variable Name | Required | Default / Local Example | Production Example | Description |
+| Variable Name | Required | Local Example | Production Placeholder Example | Description |
 | :--- | :---: | :--- | :--- | :--- |
-| `VITE_API_BASE_URL` | **Yes** | `http://localhost:5143/api` | `https://sasrika-real-estate-production.up.railway.app/api` | Base URL pointing to the Backend API. |
-| `VITE_GOOGLE_CLIENT_ID` | **Yes** | `8700404392-...apps.googleusercontent.com` | `8700404392-...apps.googleusercontent.com` | Google OAuth 2.0 Web Client ID used by the Google Identity Services popup. |
+| `VITE_API_BASE_URL` | **Yes** | `http://localhost:5143/api` | `https://your-railway-app.up.railway.app/api` | Base URL pointing to the Backend API. |
+| `VITE_GOOGLE_CLIENT_ID` | **Yes** | `your_google_client_id.apps.googleusercontent.com` | `your_google_client_id.apps.googleusercontent.com` | Google OAuth 2.0 Web Client ID used by the Google Identity Services popup. |
 
 ---
 
 ### Backend Environment Variables & Configuration
 
-Configure these variables in `Backend/appsettings.json` (Local) and in the **Railway Project Settings > Variables** (Production).
+In production, Railway injects environment variables directly into the container. In local development, configure `Backend/appsettings.Development.json`.
 
-| Variable / Key | Required | Production / Secret Format | Description |
+| Variable / Key | Required | Production Value Placeholder | Description |
 | :--- | :---: | :--- | :--- |
-| `DATABASE_URL` | **Yes** | `postgresql://user:pass@host:port/railway` | PostgreSQL URI injected automatically by Railway. Parsed in `Program.cs` into an Npgsql connection string. |
-| `ConnectionStrings__DefaultConnection` | Optional | `Host=localhost;Port=5432;Database=sasrika;Username=postgres;Password=...` | Fallback connection string if `DATABASE_URL` is not defined. |
-| `ASPNETCORE_ENVIRONMENT` | **Yes** | `Production` (or `Development` locally) | Sets ASP.NET Core environment mode. Controls Swagger visibility and detailed error reporting. |
-| `JwtSettings__Secret` | **Yes** | *Cryptographically strong secret key (min. 32 chars)* | Symmetric key used to sign and verify HMAC-SHA256 JWT tokens. |
-| `JwtSettings__Issuer` | **Yes** | `SasrikaRealEstate` | Expected token issuer (`iss` claim). |
-| `JwtSettings__Audience` | **Yes** | `SasrikaRealEstateApp` | Expected token audience (`aud` claim). |
-| `CloudinarySettings__CloudName` | **Yes** | `cczoij74` | Cloudinary account Cloud Name. |
-| `CloudinarySettings__ApiKey` | **Yes** | `447746453132182` | Cloudinary API Key. |
-| `CloudinarySettings__ApiSecret` | **Yes** | *Cloudinary API Secret* | Cloudinary API Secret for signed REST uploads. |
+| `DATABASE_URL` | **Yes** | `postgresql://username:password@postgres.railway.internal:5432/railway` | PostgreSQL URI injected automatically by Railway. Parsed in `Program.cs` into an Npgsql connection string. |
+| `ConnectionStrings__DefaultConnection` | Optional | `Host=your_db_host;Port=5432;Database=your_db;Username=your_user;Password=your_password;SSL Mode=Prefer;Trust Server Certificate=true` | Fallback connection string if `DATABASE_URL` is not defined. |
+| `ASPNETCORE_ENVIRONMENT` | **Yes** | `Production` (or `Development` locally) | Sets ASP.NET Core environment mode. Controls Swagger visibility and error verbosity. |
+| `JwtSettings__Secret` | **Yes** | `your_jwt_secret_key_minimum_32_characters` | Symmetric key used to sign and verify HMAC-SHA256 JWT tokens. |
+| `JwtSettings__Issuer` | **Yes** | `SashrikaRealEstate` | Expected token issuer (`iss` claim). |
+| `JwtSettings__Audience` | **Yes** | `SashrikaRealEstateApp` | Expected token audience (`aud` claim). |
+| `CloudinarySettings__CloudName` | **Yes** | `your_cloudinary_cloud_name` | Cloudinary account Cloud Name. |
+| `CloudinarySettings__ApiKey` | **Yes** | `your_cloudinary_api_key` | Cloudinary API Key. |
+| `CloudinarySettings__ApiSecret` | **Yes** | `your_cloudinary_api_secret` | Cloudinary API Secret for signed REST uploads. |
 | `CloudinarySettings__Folder` | **Yes** | `sasrika/properties` | Cloudinary folder under which property images are stored. |
-| `Authentication__Google__ClientId` | **Yes** | `8700404392-...apps.googleusercontent.com` | Google OAuth Client ID validated by backend when verifying tokens. |
-| `AdminSettings__MasterKey` | **Yes** | *Custom administrative password* | Master secret key used to verify admin access via `X-Admin-Key` header. |
+| `Authentication__Google__ClientId` | **Yes** | `your_google_client_id.apps.googleusercontent.com` | Google OAuth Client ID validated by backend when verifying tokens. |
+| `AdminSettings__MasterKey` | **Yes** | `your_admin_master_key` | Master secret key used to verify admin access via `X-Admin-Key` header. |
 
 ---
 
@@ -364,7 +344,7 @@ Configure these variables in `Backend/appsettings.json` (Local) and in the **Rai
 Ensure the following tools are installed on your workstation:
 - **.NET 10 SDK**: Verify using `dotnet --version`
 - **Node.js (v20+ LTS) & npm**: Verify using `node -v` and `npm -v`
-- **PostgreSQL (v15+)**: Running locally or accessible via network
+- **PostgreSQL (v15+)**: Running locally (or Docker container)
 - **Git**: For version control
 
 ---
@@ -376,45 +356,36 @@ Ensure the following tools are installed on your workstation:
    cd Backend
    ```
 
-2. **Configure Database Connection**:
-   Open `appsettings.Development.json` or `appsettings.json` and set your local PostgreSQL connection string under `ConnectionStrings:DefaultConnection`:
+2. **Configure Local Database Connection**:
+   Open `appsettings.Development.json` and ensure your local PostgreSQL connection string is set:
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Host=localhost;Port=5432;Database=sasrika_dev;Username=postgres;Password=your_password;SSL Mode=Prefer;Trust Server Certificate=true"
-     },
-     "JwtSettings": {
-       "Secret": "DevelopmentSecretKeyForSasrikaRealEstateMustBe32CharactersOrMore!",
-       "Issuer": "SasrikaRealEstate",
-       "Audience": "SasrikaRealEstateApp"
-     },
-     "CloudinarySettings": {
-       "CloudName": "your_cloud_name",
-       "ApiKey": "your_api_key",
-       "ApiSecret": "your_api_secret",
-       "Folder": "sasrika/properties"
-     },
-     "Authentication": {
-       "Google": {
-         "ClientId": "your_google_client_id.apps.googleusercontent.com"
-       }
+       "DefaultConnection": "Host=localhost;Port=5432;Database=sashrika_dev;Username=postgres;Password=your_password;SSL Mode=Prefer;Trust Server Certificate=true"
      },
      "AdminSettings": {
        "MasterKey": "DevAdminKey123"
+     },
+     "JwtSettings": {
+       "Secret": "DevelopmentSecretKeyForSasrikaRealEstateMustBe32CharactersOrMore!",
+       "Issuer": "SashrikaRealEstate",
+       "Audience": "SashrikaRealEstateApp",
+       "ExpiryDays": 7
      }
    }
    ```
 
-3. **Restore NuGet Packages**:
+3. **Restore NuGet Packages & Build**:
    ```bash
    dotnet restore
+   dotnet build
    ```
 
 4. **Run the Backend API**:
    ```bash
    dotnet run
    ```
-   - The API will start on `http://localhost:5143` (HTTP) and `https://localhost:7143` (HTTPS).
+   - The API starts on `http://localhost:5143` (HTTP) and `https://localhost:7143` (HTTPS).
    - On startup, `EnsureCreated()` automatically initializes the database tables and seeds the default administrator account:
      - **Email**: `admin@sasrika.lk`
      - **Password**: `Admin@2026`
@@ -435,10 +406,14 @@ Ensure the following tools are installed on your workstation:
    ```
 
 3. **Configure Local Environment**:
-   Create or verify the `Frontend/.env` file:
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   Verify `Frontend/.env`:
    ```env
    VITE_API_BASE_URL=http://localhost:5143/api
-   VITE_GOOGLE_CLIENT_ID=8700404392-ce6khm9cklapb7ej03mr73ojnb8bfsiu.apps.googleusercontent.com
+   VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
    ```
 
 4. **Start the Vite Development Server**:
@@ -454,8 +429,8 @@ Ensure the following tools are installed on your workstation:
 1. Open `http://localhost:5173` in your browser.
 2. Click **Sign In** and verify that the authentication modal opens.
 3. Test regular login using the seeded admin credentials (`admin@sasrika.lk` / `Admin@2026`).
-4. Click **+ Add Property** to ensure the modal opens, upload test images, and submit a test listing.
-5. Visit `http://localhost:5173/admin`, enter your configured Admin Master Key, and confirm that the submitted property appears in the Pending Moderation queue.
+4. Click **+ Add Property** to ensure the modal opens, verify phone number validation (10 digits starting with `0`), and test uploading images.
+5. Visit `http://localhost:5173/admin`, enter the configured Admin Master Key, and confirm that moderation queues function.
 
 ---
 
@@ -463,28 +438,26 @@ Ensure the following tools are installed on your workstation:
 
 ### Railway Setup (PostgreSQL Database & Backend API)
 
-Railway hosts both the managed PostgreSQL database and the ASP.NET Core containerized Web API.
-
 ```
 Railway Project Dashboard
 ├── Service 1: PostgreSQL Database (Plugin)
 │   └── Variables: Provides DATABASE_URL automatically
-└── Service 2: Sasrika Backend (ASP.NET Core Web API)
+└── Service 2: Sashrika Backend (ASP.NET Core Web API)
     ├── Connected to GitHub repository (Backend root)
     └── Variables: Linked DATABASE_URL, JWT, Cloudinary, and Google credentials
 ```
 
 #### Step 1: Provision the PostgreSQL Database on Railway
 1. Log in to [Railway](https://railway.app/).
-2. Create a new project or select your existing project (`Sasrika-Real-Estate`).
+2. Create a new project.
 3. Click **+ New** > **Database** > **Add PostgreSQL**.
-4. Railway will spin up a PostgreSQL instance. In the database's **Variables** tab, you will find `DATABASE_URL` (e.g., `postgresql://postgres:password@postgres.railway.internal:5432/railway`).
+4. Railway will spin up a PostgreSQL instance and expose `DATABASE_URL` (e.g., `postgresql://username:password@postgres.railway.internal:5432/railway`).
 
 #### Step 2: Deploy the Backend Service
 1. Click **+ New** > **GitHub Repo** and select the repository.
 2. In the deployment settings:
-   - **Root Directory**: Set to `/Backend` (if repository contains both frontend and backend).
-   - Railway will automatically detect the .NET project using its Nixpacks builder.
+   - **Root Directory**: Set to `/Backend`.
+   - Railway will automatically detect the .NET 10 project.
 3. In the **Variables** tab of the backend service, add the following environment variables:
 
 ```ini
@@ -495,32 +468,30 @@ DATABASE_URL=${{Postgres.DATABASE_URL}}
 ASPNETCORE_ENVIRONMENT=Production
 
 # JWT Configuration
-JwtSettings__Secret=SasrikaRealEstateSuperSecretKey2026!MustBeLongEnoughForHmacSha256SecurityRequirement
-JwtSettings__Issuer=SasrikaRealEstate
-JwtSettings__Audience=SasrikaRealEstateApp
+JwtSettings__Secret=your_jwt_secret_key_minimum_32_characters
+JwtSettings__Issuer=SashrikaRealEstate
+JwtSettings__Audience=SashrikaRealEstateApp
 
 # Cloudinary Storage Configuration
-CloudinarySettings__CloudName=cczoij74
-CloudinarySettings__ApiKey=447746453132182
-CloudinarySettings__ApiSecret=q6zW7MDrhtlNLDKxMR4qYkKiRyc
+CloudinarySettings__CloudName=your_cloudinary_cloud_name
+CloudinarySettings__ApiKey=your_cloudinary_api_key
+CloudinarySettings__ApiSecret=your_cloudinary_api_secret
 CloudinarySettings__Folder=sasrika/properties
 
 # Google OAuth Client ID
-Authentication__Google__ClientId=8700404392-ce6khm9cklapb7ej03mr73ojnb8bfsiu.apps.googleusercontent.com
+Authentication__Google__ClientId=your_google_client_id.apps.googleusercontent.com
 
 # Admin Master Key
-AdminSettings__MasterKey=Maalz
+AdminSettings__MasterKey=your_admin_master_key
 ```
 
-4. In **Settings** > **Networking**, click **Generate Domain** (e.g., `sasrika-real-estate-production.up.railway.app`).
+4. In **Settings** > **Networking**, click **Generate Domain** (e.g., `your-railway-app.up.railway.app`).
 5. Your production API base endpoint will be:
-   `https://sasrika-real-estate-production.up.railway.app/api`
+   `https://your-railway-app.up.railway.app/api`
 
 ---
 
 ### Vercel Setup (Frontend SPA & Routing)
-
-Vercel hosts the compiled React SPA and manages edge delivery.
 
 #### Step 1: Import Project into Vercel
 1. Log in to [Vercel](https://vercel.com/).
@@ -533,15 +504,15 @@ Vercel hosts the compiled React SPA and manages edge delivery.
    - **Install Command**: `npm install`
 
 #### Step 2: Configure Vercel Environment Variables
-In the project import page (or **Project Settings > Environment Variables**), add:
+In **Project Settings > Environment Variables**, add:
 
 | Key | Value |
 | :--- | :--- |
-| `VITE_API_BASE_URL` | `https://sasrika-real-estate-production.up.railway.app/api` |
-| `VITE_GOOGLE_CLIENT_ID` | `8700404392-ce6khm9cklapb7ej03mr73ojnb8bfsiu.apps.googleusercontent.com` |
+| `VITE_API_BASE_URL` | `https://your-railway-app.up.railway.app/api` |
+| `VITE_GOOGLE_CLIENT_ID` | `your_google_client_id.apps.googleusercontent.com` |
 
 #### Step 3: Verify Single-Page Application (SPA) Routing Rewrite
-Ensure `Frontend/vercel.json` exists in your repository to prevent 404 errors when users directly reload deep routes like `/admin`, `/my-listings`, or `/property/123`:
+Ensure `Frontend/vercel.json` exists in your repository to prevent 404 errors on route reloads:
 
 ```json
 {
@@ -554,34 +525,30 @@ Ensure `Frontend/vercel.json` exists in your repository to prevent 404 errors wh
 }
 ```
 
-Click **Deploy**. Vercel will build and assign a domain (e.g., `https://sasrika-real-estate-bh9k.vercel.app`).
+Deploy the application. Vercel will assign a production domain (e.g., `https://your-app.vercel.app`).
 
 ---
 
 ### Google Cloud Console Configuration (OAuth 2.0)
 
-To allow users to sign in via Google OAuth on both local and production environments:
-
 1. Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Select your project and navigate to **APIs & Services > Credentials**.
-3. Locate or create an **OAuth 2.0 Client ID** (Application type: **Web application**).
-4. Configure **Authorized JavaScript Origins**:
+2. Under **APIs & Services > Credentials**, create or edit an **OAuth 2.0 Client ID** (Web application).
+3. Configure **Authorized JavaScript Origins**:
    - `http://localhost:5173` *(Local development)*
-   - `https://sasrika-real-estate-bh9k.vercel.app` *(Production Vercel domain)*
-   - *(Optional: Add custom production domain if applicable)*
-5. Configure **Authorized Redirect URIs**:
+   - `https://your-app.vercel.app` *(Production domain)*
+4. Configure **Authorized Redirect URIs**:
    - `http://localhost:5173`
-   - `https://sasrika-real-estate-bh9k.vercel.app`
-6. Save changes. Google OAuth tokens will now be accepted by both environments.
+   - `https://your-app.vercel.app`
+5. Save changes.
 
 ---
 
 ### Cloudinary Media Storage Configuration
 
-1. Log in to your [Cloudinary Console](https://cloudinary.com/console).
+1. Log in to the [Cloudinary Console](https://cloudinary.com/console).
 2. Retrieve your **Cloud Name**, **API Key**, and **API Secret** from the Dashboard.
-3. Configure these values in Railway environment variables as detailed in the Railway setup section.
-4. *(Optional)* Navigate to **Settings > Upload** and create an upload preset if direct uploads are required in future extensions. In the current architecture, all uploads pass through `Backend/Services/PhotoService.cs` using authenticated SDK credentials.
+3. Configure these values in your hosting environment variables (e.g., Railway).
+4. In `PhotoService.cs`, all media uploads pass through the authenticated SDK, applying auto-format (`f_auto`) and quality compression (`q_auto`).
 
 ---
 
@@ -589,7 +556,7 @@ To allow users to sign in via Google OAuth on both local and production environm
 
 ### Authentication Architecture & Workflows
 
-Sasrika Real Estate supports dual-mode user authentication:
+Sashrika Real Estate supports dual-mode user authentication:
 
 ```mermaid
 sequenceDiagram
@@ -615,7 +582,7 @@ sequenceDiagram
         end
         API-->>Frontend: Return JWT Token + User Profile
     else Standard Email & Password Flow
-        User->>Frontend: Enter Email + Password
+        User->>Frontend: Enter Email + Password (min. 8 characters)
         Frontend->>API: POST /api/auth/login { email, password }
         API->>DB: Query User by Email
         API->>API: Verify password hash (PasswordHasher<User>)
@@ -630,23 +597,20 @@ sequenceDiagram
 
 ### Role-Based Access Control (RBAC) & Admin Verification
 
-The platform defines two user roles in the `User` model:
-
 | Role | Permissions & Privileges |
 | :--- | :--- |
 | **User** | - Submit new properties for moderation.<br>- View, edit, and delete self-submitted properties.<br>- Mark self-submitted properties as Sold.<br>- Favorite listings (persisted locally). |
 | **Admin** | - Full access to all properties across all users.<br>- Access the Admin Moderation Dashboard (`/admin`).<br>- Approve or reject pending property submissions.<br>- Permanently delete any property listing.<br>- View system-wide statistics (total, pending, approved, rejected). |
 
 #### Two-Layer Admin Authorization
-To protect sensitive moderation endpoints, the platform implements defense-in-depth:
-1. **Frontend Layer**: `ProtectedRoute` checks user authentication. On `/admin`, `AdminPage` challenges the user with a master security key modal if not previously authenticated for the session.
-2. **Backend Layer**: All `/api/admin/*` endpoints require the `X-Admin-Key` header (or `adminKey` query parameter) matching `AdminSettings:MasterKey`. This ensures that even compromised standard JWT tokens cannot perform administrative actions without the master key.
+1. **Frontend Layer**: `ProtectedRoute` checks standard authentication. Visiting `/admin` challenges the user with a master security key prompt.
+2. **Backend Layer**: All `/api/admin/*` endpoints require the `X-Admin-Key` header matching `AdminSettings:MasterKey`.
 
 ---
 
 ### Frontend Route Protection
 
-The `ProtectedRoute.jsx` component wraps private routes in `App.jsx`:
+The `ProtectedRoute.jsx` component wraps private routes:
 
 ```jsx
 <Route
@@ -667,25 +631,17 @@ The `ProtectedRoute.jsx` component wraps private routes in `App.jsx`:
 />
 ```
 
-When an unauthenticated user attempts to visit a protected route:
-1. `ProtectedRoute` saves the requested URL in `sessionStorage.setItem('sasrika_redirect_after_login', location.pathname)`.
-2. Dispatches `window.dispatchEvent(new CustomEvent('sasrika:open-auth-modal'))`.
-3. Navigates the user to `/`.
-4. Upon successful login, `Navbar.jsx` inspects `sessionStorage` and immediately redirects the user to their originally requested destination.
+Unauthenticated users attempting to access these routes are redirected to `/`, their intended path is stored in `sessionStorage`, and the authentication modal is automatically opened.
 
 ---
 
 ### Backend JWT Token Validation & CORS Policies
 
 - **Algorithm**: Symmetric HMAC-SHA256 (`HmacSha256`).
-- **Token Claims**:
-  - `ClaimTypes.NameIdentifier`: User GUID.
-  - `ClaimTypes.Email`: User email.
-  - `ClaimTypes.Name`: User full name.
-  - `ClaimTypes.Role`: User role (`"User"` or `"Admin"`).
+- **Token Claims**: `NameIdentifier` (User GUID), `Email`, `Name`, `Role`.
 - **Token Expiry**: 7 days from generation.
 - **Clock Skew**: `TimeSpan.Zero` for strict expiration enforcement.
-- **CORS Configuration**: Configured with `SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader().AllowCredentials()` to allow cross-origin communication from production Vercel domains, preview deployments, and local development hosts.
+- **CORS Configuration**: Configured with `SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader().AllowCredentials()` to allow communication from production Vercel domains, preview deployments, and local development hosts.
 
 ---
 
@@ -707,18 +663,12 @@ stateDiagram-v2
     Approved --> PublicListing: Displayed on Public Search & Home Grid
     Rejected --> Hidden: Hidden from public; visible in owner's My Listings
     
-    PublicListing --> Sold: Owner marks as Sold (PUT /api/properties/{id}/sold)
+    PublicListing --> Sold: Owner marks as Sold (PATCH /api/properties/{id}/toggle-sold)
     PublicListing --> Deleted: Owner or Admin deletes listing (DELETE /api/properties/{id})
     Rejected --> Deleted: Owner or Admin deletes listing
     
     Deleted --> [*]
 ```
-
-1. **Submission**: User completes property details in `AddPropertyModal.jsx` and attaches photos.
-2. **Validation**: Price, location, property type, and contact details are validated on both client and server.
-3. **Price-per-Perch Calculation**: If the property is `Land` and `ForSale`, the backend automatically calculates `PricePerPerch = Price / LandSizePerches`. For other property types, this field is explicitly set to `null`.
-4. **Moderation Queue**: The property is assigned `Status = ModerationStatus.Pending` and an identifier like `#SR-12345`.
-5. **Approval**: An admin reviews the listing in `/admin` and approves it. The status updates to `Approved`, making it visible to the public.
 
 ---
 
@@ -750,7 +700,27 @@ sequenceDiagram
 - **Batch Size Limit**: Up to 10 images per batch.
 - **File Size Limit**: 15 MB per file; 150 MB total per upload request.
 - **Supported Formats**: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.avif`.
-- **CDN Optimization**: Every Cloudinary URL includes automatic format conversion (`f_auto`) and quality compression (`q_auto`).
+
+---
+
+### Strict Sri Lankan Phone Number Validation
+
+To ensure reliable WhatsApp and telephone communication between buyers and sellers, all phone number fields enforce strict Sri Lankan phone validation:
+
+1. **Frontend Restrictions (`onChange` & `maxLength`)**:
+   - Strips non-digit characters immediately: `e.target.value.replace(/\D/g, '').slice(0, 10)`.
+   - Restricts maximum input length to 10 characters (`maxLength={10}`).
+2. **Validation Rules**:
+   - Must start with `0` and be exactly 10 digits (`/^0\d{9}$/`).
+   - Inline error message: `"Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567)"`.
+   - Disables submit buttons and blocks form submission while the input is invalid.
+3. **Backend DTO Validation**:
+   - Both `CreatePropertyDto` and `UpdatePropertyDto` enforce:
+     ```csharp
+     [Required(ErrorMessage = "Seller phone is required")]
+     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must start with 0 and be exactly 10 digits (e.g., 0771234567).")]
+     string SellerPhone
+     ```
 
 ---
 
@@ -772,16 +742,14 @@ The public property query endpoint (`GET /api/properties`) supports composable, 
 
 ### User Inquiry & WhatsApp Contact Flow
 
-Each approved property listing enables interested buyers to contact the property seller directly:
-
 1. **Viewing Details**: A buyer views a listing at `/property/:id`.
-2. **WhatsApp Action**: Clicking the **WhatsApp** button triggers a direct WhatsApp Web or Mobile link:
+2. **WhatsApp Action**: Clicking the **WhatsApp** button triggers a direct WhatsApp link:
    ```
-   https://wa.me/{SellerPhone}?text=Hi%2C%20I%20am%20interested%20in%20your%20property%20%22{Title}%22%20(Ref%3A%20{ReferenceCode})%20on%20Sasrika%20Real%20Estate.
+   https://wa.me/{SellerPhone}?text=Hi%2C%20I%20am%20interested%20in%20your%20listing%3A%20%22{Title}%22%20(Price%3A%20{Price})%20listed%20on%20Sashrika.
    ```
-3. **Direct Call Action**: Clicking the **Call** button triggers a `tel:{SellerPhone}` protocol link.
-4. **Reference Code**: Every communication automatically incorporates the unique reference code (e.g., `#SR-84920`), allowing the seller to identify the listing immediately.
+3. **Direct Call Action**: Clicking the **Call** button triggers a `tel:{SellerPhone}` link.
+4. **Reference Code**: Every communication incorporates the unique reference code (e.g., `#SR-84920`), allowing the seller to identify the listing immediately.
 
 ---
 
-*Documentation maintained and generated for the Sasrika Real Estate project repository.*
+*Documentation maintained and sanitized for public repository release.*
